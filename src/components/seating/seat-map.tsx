@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { STATUS, STATUS_ORDER } from "@/lib/status";
 import type { BlockSide, SeatStatus } from "@/lib/types";
@@ -88,35 +88,11 @@ export function SeatMap({
   const storeCell = useApp((s) => s.cellSize);
   const selectSeat = useApp((s) => s.selectSeat);
   const { seats } = useSeatVMs(presScope);
-
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
   const isDesktop = useIsDesktop();
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver((entries) =>
-      setWidth(entries[0].contentRect.width),
-    );
-    ro.observe(el);
-    setWidth(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
 
   const left = seats.filter((s) => s.side === "L");
   const right = seats.filter((s) => s.side === "R");
-
-  // Mobile: stack the two blocks and auto-fit one 10-column block to the
-  // available width (no horizontal scrolling). Desktop: side-by-side with zoom.
-  const stacked = !isDesktop;
-  // one block ≈ gutter(0.8·cell) + 10·cell + 9·(0.16·cell) ≈ 12.24·cell
-  const cell = stacked
-    ? width
-      ? Math.max(13, Math.min(30, Math.floor((width - 8) / 12.5)))
-      : 20
-    : storeCell;
-  const gap = Math.max(2, Math.round(cell * 0.16));
+  const gap = Math.max(2, Math.round(storeCell * 0.16));
 
   const stage = (
     <div className="mx-auto mb-4 max-w-md rounded-xl bg-brand-amber px-4 py-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-brand-ink shadow-sm">
@@ -124,67 +100,128 @@ export function SeatMap({
     </div>
   );
 
-  return (
-    <div ref={ref} className={cn(className)}>
-      {stage}
+  // Mobile: keep the real side-by-side venue layout but fit the whole map to
+  // the screen width via fractional columns (no horizontal scroll). Desktop:
+  // side-by-side, fixed size + zoom.
+  if (!isDesktop) {
+    return (
+      <div className={cn(className)}>
+        {stage}
+        <div className="flex items-start gap-1.5">
+          <FluidBlock
+            letters={LEFT_LETTERS}
+            seats={left}
+            onSelect={selectSeat}
+          />
+          <div className="w-2 shrink-0 self-stretch border-x border-dashed border-border" />
+          <FluidBlock
+            letters={RIGHT_LETTERS}
+            seats={right}
+            onSelect={selectSeat}
+          />
+        </div>
+      </div>
+    );
+  }
 
-      {stacked ? (
-        <div className="space-y-6">
-          <div className="flex justify-center overflow-x-auto">
-            <Block
-              letters={LEFT_LETTERS}
-              seats={left}
-              rows={20}
-              cellSize={cell}
-              gap={gap}
-              numbersSide="left"
-              onSelect={selectSeat}
-            />
-          </div>
-          <div className="border-t border-dashed border-border" />
-          <div className="flex justify-center overflow-x-auto">
-            <Block
-              letters={RIGHT_LETTERS}
-              seats={right}
-              rows={21}
-              cellSize={cell}
-              gap={gap}
-              numbersSide="left"
-              onSelect={selectSeat}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-x-auto">
+  return (
+    <div className={cn(className)}>
+      {stage}
+      <div className="overflow-x-auto">
+        <div className="mx-auto flex w-fit items-start" style={{ gap: storeCell }}>
+          <Block
+            letters={LEFT_LETTERS}
+            seats={left}
+            rows={20}
+            cellSize={storeCell}
+            gap={gap}
+            numbersSide="left"
+            onSelect={selectSeat}
+          />
           <div
-            className="mx-auto flex w-fit items-start"
-            style={{ gap: cell }}
-          >
-            <Block
-              letters={LEFT_LETTERS}
-              seats={left}
-              rows={20}
-              cellSize={cell}
-              gap={gap}
-              numbersSide="left"
-              onSelect={selectSeat}
-            />
-            <div
-              className="self-stretch border-x border-dashed border-border"
-              style={{ width: Math.max(8, Math.round(cell * 0.4)) }}
-            />
-            <Block
-              letters={RIGHT_LETTERS}
-              seats={right}
-              rows={21}
-              cellSize={cell}
-              gap={gap}
-              numbersSide="right"
-              onSelect={selectSeat}
-            />
-          </div>
+            className="self-stretch border-x border-dashed border-border"
+            style={{ width: Math.max(8, Math.round(storeCell * 0.4)) }}
+          />
+          <Block
+            letters={RIGHT_LETTERS}
+            seats={right}
+            rows={21}
+            cellSize={storeCell}
+            gap={gap}
+            numbersSide="right"
+            onSelect={selectSeat}
+          />
         </div>
-      )}
+      </div>
+    </div>
+  );
+}
+
+/** Mobile seat block: fractional CSS grid that always fits its container. */
+function FluidBlock({
+  letters,
+  seats,
+  onSelect,
+}: {
+  letters: string[];
+  seats: SeatVM[];
+  onSelect: (label: string) => void;
+}) {
+  const colStyle = {
+    gridTemplateColumns: `repeat(${letters.length}, minmax(0, 1fr))`,
+  };
+  return (
+    <div className="min-w-0 flex-1">
+      <div className="mb-0.5 grid gap-0.5" style={colStyle}>
+        {letters.map((l) => (
+          <div
+            key={l}
+            className="text-center text-[7px] font-bold text-muted-foreground"
+          >
+            {l}
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-0.5 pt-5" style={colStyle}>
+        {seats.map((s) => {
+          const cfg = STATUS[s.status];
+          const ring = s.isYou
+            ? "#FD8602"
+            : s.selected || s.matched
+              ? "#1a1712"
+              : null;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              data-seat={s.label}
+              onClick={() => onSelect(s.label)}
+              title={`${s.label} · ${cfg.label}`}
+              className="relative grid aspect-square w-full place-items-center text-[7px] font-bold leading-none transition-opacity"
+              style={{
+                gridColumnStart: s.colWithinBlock + 1,
+                gridRowStart: s.rowNum,
+                borderRadius: "20%",
+                background: cfg.c,
+                color: cfg.fg,
+                opacity: s.dim ? 0.16 : 1,
+                outline: ring ? `1.5px solid ${ring}` : "none",
+                outlineOffset: 1,
+                boxShadow: s.isYou ? "0 0 0 2.5px rgba(253,134,2,0.3)" : "none",
+                zIndex: s.isYou ? 20 : undefined,
+              }}
+            >
+              {s.isYou && (
+                <span className="pointer-events-none absolute -top-5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-orange px-1.5 py-0.5 text-[7px] font-bold uppercase tracking-wide text-white shadow-md">
+                  You
+                  <span className="absolute left-1/2 top-full size-1.5 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-brand-orange" />
+                </span>
+              )}
+              {String(s.rowNum)}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
