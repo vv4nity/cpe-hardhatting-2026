@@ -56,146 +56,172 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row">
-      {/* desktop brand cover (portrait poster) */}
-      <div className="relative hidden bg-brand-ink lg:block lg:flex-1">
-        <Image
-          src="/main cover portrait.jpg"
-          alt="Hardhatting 2026 — Coded for the Future · July 1, 2026 · Bulwagang Balagtas"
-          fill
-          priority
-          sizes="50vw"
-          className="object-contain object-center"
-        />
-      </div>
+    <div className="relative min-h-dvh overflow-hidden bg-brand-ink">
+      {/* ambient brand glow */}
+      <div className="pointer-events-none absolute -left-40 -top-40 size-[30rem] rounded-full bg-brand-orange/25 blur-[130px]" />
+      <div className="pointer-events-none absolute -bottom-48 -right-32 size-[34rem] rounded-full bg-brand-amber/15 blur-[130px]" />
+      {/* construction tape */}
+      <div className="absolute inset-x-0 top-0 z-10 h-1.5 hazard-stripe" />
 
-      {/* form */}
-      <div className="flex flex-1 items-center justify-center bg-background px-5 py-8 sm:px-8 sm:py-10">
-        <div className="w-full max-w-sm animate-fade-up">
-          {/* mobile: album-cover poster */}
-          <div className="mb-7 flex justify-center lg:hidden">
-            <div className="relative w-40 overflow-hidden rounded-2xl shadow-xl ring-1 ring-brand-ink/10">
+      <div className="relative mx-auto grid min-h-dvh max-w-6xl items-center gap-10 px-5 py-12 lg:grid-cols-2 lg:gap-16 lg:px-10">
+        {/* featured poster — desktop */}
+        <div className="hidden lg:flex lg:items-center lg:justify-center">
+          <div className="group relative w-full max-w-sm">
+            <div className="absolute -inset-4 rounded-[2.5rem] bg-gradient-to-br from-brand-amber/25 via-brand-orange/10 to-transparent blur-2xl" />
+            <div className="relative -rotate-2 overflow-hidden rounded-[1.75rem] shadow-2xl ring-1 ring-white/10 transition-transform duration-500 ease-out group-hover:rotate-0">
               <Image
                 src="/main cover portrait.jpg"
-                alt="Hardhatting Ceremony 2026"
+                alt="Hardhatting Ceremony 2026 — Coded for the Future"
                 width={1200}
                 height={1500}
                 priority
-                sizes="160px"
+                sizes="(max-width: 1024px) 0px, 28rem"
                 className="h-auto w-full"
               />
-              <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
             </div>
           </div>
+        </div>
 
-          {!sent ? (
-            <>
-              <h1 className="font-display text-5xl leading-none tracking-wide">
-                WELCOME BACK
-              </h1>
-              <p className="mt-3 text-base text-muted-foreground">
-                Sign in with a magic link to access the event control system.
-              </p>
+        {/* form */}
+        <div className="flex w-full flex-col items-center">
+          {/* mobile album poster */}
+          <div className="mb-6 w-36 overflow-hidden rounded-2xl shadow-xl ring-1 ring-white/10 lg:hidden">
+            <Image
+              src="/main cover portrait.jpg"
+              alt="Hardhatting Ceremony 2026"
+              width={1200}
+              height={1500}
+              priority
+              sizes="144px"
+              className="h-auto w-full"
+            />
+          </div>
 
-              <form
-                className="mt-7 space-y-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  sendLink();
-                }}
-              >
-                <Label htmlFor="email" className="text-sm">
-                  School email
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@iskolarngbayan.pup.edu.ph"
-                  autoComplete="email"
-                  className="h-12 text-base"
-                />
+          <div className="relative w-full max-w-md animate-fade-up overflow-hidden rounded-3xl border border-white/10 bg-card p-7 shadow-2xl sm:p-8">
+            <div className="absolute inset-x-0 top-0 h-1 hazard-stripe opacity-90" />
 
-                <div className="pt-4">
-                  <Label className="mb-2 block text-sm">
-                    Sign in as{" "}
-                    <span className="text-brand-orange">(demo role)</span>
+            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-brand-orange">
+              <span className="size-1.5 animate-pulse rounded-full bg-brand-orange" />
+              Coded for the Future
+            </div>
+
+            {!sent ? (
+              <>
+                <h1 className="mt-2 font-display text-5xl leading-none tracking-wide">
+                  WELCOME BACK
+                </h1>
+                <p className="mt-2.5 text-[15px] text-muted-foreground">
+                  Sign in with a magic link to access the event control system.
+                </p>
+
+                <form
+                  className="mt-6 space-y-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    sendLink();
+                  }}
+                >
+                  <Label htmlFor="email" className="text-sm">
+                    School email
                   </Label>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {DEMO_ROLES.map((r) => (
-                      <button
-                        type="button"
-                        key={r.id}
-                        onClick={() => setRole(r.id)}
-                        className={cn(
-                          "flex flex-col items-center gap-1.5 rounded-2xl border p-3.5 text-center transition-all",
-                          role === r.id
-                            ? "border-brand-ink bg-brand-ink text-brand-cream shadow-sm"
-                            : "border-input bg-card text-foreground hover:border-brand-orange/60",
-                        )}
-                      >
-                        {ROLE_ICON[r.id]}
-                        <span className="text-sm font-semibold leading-tight">
-                          {r.label}
-                        </span>
-                      </button>
-                    ))}
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@iskolarngbayan.pup.edu.ph"
+                    autoComplete="email"
+                    className="h-12 bg-background text-base"
+                  />
+
+                  <div className="pt-4">
+                    <Label className="mb-2 block text-sm">
+                      Sign in as{" "}
+                      <span className="text-brand-orange">(demo role)</span>
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      {DEMO_ROLES.map((r) => (
+                        <button
+                          type="button"
+                          key={r.id}
+                          onClick={() => setRole(r.id)}
+                          className={cn(
+                            "flex items-center gap-2.5 rounded-xl border p-3 text-left transition-all",
+                            role === r.id
+                              ? "border-brand-ink bg-brand-ink text-brand-cream shadow-sm"
+                              : "border-input bg-background text-foreground hover:border-brand-orange/60 hover:bg-secondary/40",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "grid size-8 shrink-0 place-items-center rounded-lg",
+                              role === r.id
+                                ? "bg-brand-amber text-brand-ink"
+                                : "bg-secondary text-muted-foreground",
+                            )}
+                          >
+                            {ROLE_ICON[r.id]}
+                          </span>
+                          <span className="text-[13px] font-semibold leading-tight">
+                            {r.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
+
+                  <Button type="submit" size="lg" className="mt-5 w-full">
+                    Send magic link
+                    <ArrowRight />
+                  </Button>
+                </form>
+
+                <p className="mt-5 text-center text-sm text-muted-foreground">
+                  Front-only demonstration · no password required
+                </p>
+              </>
+            ) : (
+              <div className="mt-2">
+                <div className="grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
+                  <MailCheck className="size-7" />
+                </div>
+                <h1 className="mt-5 font-display text-5xl leading-none tracking-wide">
+                  CHECK YOUR INBOX
+                </h1>
+                <p className="mt-2 text-[15px] text-muted-foreground">
+                  We sent a sign-in link to{" "}
+                  <span className="font-semibold text-foreground">
+                    {email || "your email"}
+                  </span>
+                  . Open it to continue as{" "}
+                  <span className="font-semibold text-foreground">
+                    {DEMO_ROLES.find((r) => r.id === role)?.label}
+                  </span>
+                  .
+                </p>
+
+                <div className="mt-6 rounded-2xl border border-dashed border-border bg-secondary/40 p-4 text-xs text-muted-foreground">
+                  This is a front-only demo — there is no real inbox. Use the
+                  button below to simulate opening the magic link.
                 </div>
 
-                <Button type="submit" size="lg" className="mt-5 w-full">
-                  Send magic link
+                <Button size="lg" className="mt-5 w-full" onClick={enter}>
+                  Open magic link
                   <ArrowRight />
                 </Button>
-              </form>
-
-              <p className="mt-5 text-center text-sm text-muted-foreground">
-                Front-only demonstration · no password required
-              </p>
-            </>
-          ) : (
-            <div className="mt-6">
-              <div className="grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
-                <MailCheck className="size-7" />
+                <Button
+                  variant="ghost"
+                  className="mt-2 w-full"
+                  onClick={() => setSent(false)}
+                >
+                  <ArrowLeft />
+                  Use a different email or role
+                </Button>
               </div>
-              <h1 className="mt-5 font-display text-5xl leading-none tracking-wide">
-                CHECK YOUR INBOX
-              </h1>
-              <p className="mt-2 text-base text-muted-foreground">
-                We sent a sign-in link to{" "}
-                <span className="font-semibold text-foreground">
-                  {email || "your email"}
-                </span>
-                . Open it to continue as{" "}
-                <span className="font-semibold text-foreground">
-                  {DEMO_ROLES.find((r) => r.id === role)?.label}
-                </span>
-                .
-              </p>
+            )}
 
-              <div className="mt-6 rounded-2xl border border-dashed border-border bg-secondary/40 p-4 text-xs text-muted-foreground">
-                This is a front-only demo — there is no real inbox. Use the
-                button below to simulate opening the magic link.
-              </div>
-
-              <Button size="lg" className="mt-5 w-full" onClick={enter}>
-                Open magic link
-                <ArrowRight />
-              </Button>
-              <Button
-                variant="ghost"
-                className="mt-2 w-full"
-                onClick={() => setSent(false)}
-              >
-                <ArrowLeft />
-                Use a different email or role
-              </Button>
-            </div>
-          )}
-
-          {/* partner logos */}
-          <PartnerLogos className="mt-10 border-t border-border/70 pt-6" />
+            <PartnerLogos className="mt-8 border-t border-border/70 pt-6" />
+          </div>
         </div>
       </div>
     </div>
