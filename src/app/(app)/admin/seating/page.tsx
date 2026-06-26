@@ -85,7 +85,7 @@ export default function AdminSeatingPage() {
           <CardContent className="p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <SeatLegend />
-              <div className="flex items-center gap-1.5 rounded-xl border border-border bg-card p-1">
+              <div className="hidden items-center gap-1.5 rounded-xl border border-border bg-card p-1 lg:flex">
                 <Button
                   variant="ghost"
                   size="icon"

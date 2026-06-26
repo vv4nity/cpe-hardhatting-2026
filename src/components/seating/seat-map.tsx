@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "@/lib/store";
 import { STATUS, STATUS_ORDER } from "@/lib/status";
 import type { BlockSide, SeatStatus } from "@/lib/types";
@@ -85,50 +85,120 @@ export function SeatMap({
   presScope?: string | null;
   className?: string;
 }) {
-  const cellSize = useApp((s) => s.cellSize);
+  const storeCell = useApp((s) => s.cellSize);
   const selectSeat = useApp((s) => s.selectSeat);
   const { seats } = useSeatVMs(presScope);
 
-  const gap = Math.max(2, Math.round(cellSize * 0.16));
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  const isDesktop = useIsDesktop();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) =>
+      setWidth(entries[0].contentRect.width),
+    );
+    ro.observe(el);
+    setWidth(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+
   const left = seats.filter((s) => s.side === "L");
   const right = seats.filter((s) => s.side === "R");
 
-  return (
-    <div className={cn("overflow-x-auto", className)}>
-      <div className="mx-auto w-fit">
-        {/* stage */}
-        <div className="mb-4 rounded-xl bg-brand-amber px-4 py-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-brand-ink shadow-sm">
-          Bulwagang Balagtas · Stage
-        </div>
+  // Mobile: stack the two blocks and auto-fit one 10-column block to the
+  // available width (no horizontal scrolling). Desktop: side-by-side with zoom.
+  const stacked = !isDesktop;
+  // one block ≈ gutter(0.8·cell) + 10·cell + 9·(0.16·cell) ≈ 12.24·cell
+  const cell = stacked
+    ? width
+      ? Math.max(13, Math.min(30, Math.floor((width - 8) / 12.5)))
+      : 20
+    : storeCell;
+  const gap = Math.max(2, Math.round(cell * 0.16));
 
-        <div className="flex items-start justify-center" style={{ gap: cellSize }}>
-          <Block
-            letters={LEFT_LETTERS}
-            seats={left}
-            rows={20}
-            cellSize={cellSize}
-            gap={gap}
-            numbersSide="left"
-            onSelect={selectSeat}
-          />
-          {/* center aisle */}
-          <div
-            className="self-stretch border-x border-dashed border-border"
-            style={{ width: Math.max(8, Math.round(cellSize * 0.4)) }}
-          />
-          <Block
-            letters={RIGHT_LETTERS}
-            seats={right}
-            rows={21}
-            cellSize={cellSize}
-            gap={gap}
-            numbersSide="right"
-            onSelect={selectSeat}
-          />
-        </div>
-      </div>
+  const stage = (
+    <div className="mx-auto mb-4 max-w-md rounded-xl bg-brand-amber px-4 py-2 text-center text-xs font-bold uppercase tracking-[0.2em] text-brand-ink shadow-sm">
+      Bulwagang Balagtas · Stage
     </div>
   );
+
+  return (
+    <div ref={ref} className={cn(className)}>
+      {stage}
+
+      {stacked ? (
+        <div className="space-y-6">
+          <div className="flex justify-center overflow-x-auto">
+            <Block
+              letters={LEFT_LETTERS}
+              seats={left}
+              rows={20}
+              cellSize={cell}
+              gap={gap}
+              numbersSide="left"
+              onSelect={selectSeat}
+            />
+          </div>
+          <div className="border-t border-dashed border-border" />
+          <div className="flex justify-center overflow-x-auto">
+            <Block
+              letters={RIGHT_LETTERS}
+              seats={right}
+              rows={21}
+              cellSize={cell}
+              gap={gap}
+              numbersSide="left"
+              onSelect={selectSeat}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <div
+            className="mx-auto flex w-fit items-start"
+            style={{ gap: cell }}
+          >
+            <Block
+              letters={LEFT_LETTERS}
+              seats={left}
+              rows={20}
+              cellSize={cell}
+              gap={gap}
+              numbersSide="left"
+              onSelect={selectSeat}
+            />
+            <div
+              className="self-stretch border-x border-dashed border-border"
+              style={{ width: Math.max(8, Math.round(cell * 0.4)) }}
+            />
+            <Block
+              letters={RIGHT_LETTERS}
+              seats={right}
+              rows={21}
+              cellSize={cell}
+              gap={gap}
+              numbersSide="right"
+              onSelect={selectSeat}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(true);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return desktop;
 }
 
 function Block({
