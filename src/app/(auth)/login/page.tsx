@@ -70,32 +70,32 @@ export default function LoginPage() {
       </div>
 
       {/* form */}
-      <div className="flex flex-1 items-center justify-center bg-background px-5 py-8 sm:px-8 sm:py-10">
-        <div className="w-full max-w-sm animate-fade-up">
-          {/* mobile: small landscape cover */}
-          <div className="mb-6 flex justify-center lg:hidden">
+      <div className="flex flex-1 items-center justify-center bg-background px-5 py-6 sm:px-8 sm:py-10">
+        <div className="w-full max-w-[320px] animate-fade-up lg:max-w-sm">
+          {/* mobile: landscape cover (aligned to form width) */}
+          <div className="mb-5 lg:hidden">
             <Image
               src="/main cover landscape.jpg"
               alt="Hardhatting Ceremony 2026"
               width={820}
               height={360}
               priority
-              sizes="260px"
-              className="w-full max-w-[260px] rounded-[8px] shadow-md"
+              sizes="320px"
+              className="w-full rounded-[8px] shadow-md"
             />
           </div>
 
           {!sent ? (
             <>
-              <h1 className="font-display text-5xl leading-none tracking-wide">
+              <h1 className="font-display text-4xl leading-none tracking-wide lg:text-5xl">
                 WELCOME BACK
               </h1>
-              <p className="mt-3 text-base text-muted-foreground">
+              <p className="mt-2 text-sm text-muted-foreground lg:text-base">
                 Sign in with a magic link to access the event control system.
               </p>
 
               <form
-                className="mt-7 space-y-2"
+                className="mt-5 space-y-2 lg:mt-7"
                 onSubmit={(e) => {
                   e.preventDefault();
                   sendLink();
@@ -111,10 +111,10 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@iskolarngbayan.pup.edu.ph"
                   autoComplete="email"
-                  className="h-12 text-base"
+                  className="h-11 text-base lg:h-12"
                 />
 
-                <div className="pt-4">
+                <div className="pt-3.5">
                   <Label className="mb-2 block text-sm">
                     Sign in as{" "}
                     <span className="text-brand-orange">(demo role)</span>
@@ -126,7 +126,7 @@ export default function LoginPage() {
                         key={r.id}
                         onClick={() => setRole(r.id)}
                         className={cn(
-                          "flex flex-col items-center gap-1.5 rounded-2xl border p-3.5 text-center transition-all",
+                          "flex flex-col items-center gap-1 rounded-2xl border p-2.5 text-center transition-all lg:gap-1.5 lg:p-3.5",
                           role === r.id
                             ? "border-brand-ink bg-brand-ink text-brand-cream shadow-sm"
                             : "border-input bg-card text-foreground hover:border-brand-orange/60",
@@ -141,13 +141,13 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <Button type="submit" size="lg" className="mt-5 w-full">
+                <Button type="submit" size="lg" className="mt-4 w-full lg:mt-5">
                   Send magic link
                   <ArrowRight />
                 </Button>
               </form>
 
-              <p className="mt-5 text-center text-sm text-muted-foreground">
+              <p className="mt-4 text-center text-xs text-muted-foreground lg:text-sm">
                 Front-only demonstration · no password required
               </p>
             </>
@@ -192,7 +192,7 @@ export default function LoginPage() {
           )}
 
           {/* partner logos */}
-          <PartnerLogos className="mt-10 border-t border-border/70 pt-6" />
+          <PartnerLogos className="mt-6 border-t border-border/70 pt-5 lg:mt-10 lg:pt-6" />
         </div>
       </div>
     </div>
