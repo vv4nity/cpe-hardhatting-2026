@@ -1,26 +1,201 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
+@custom-variant dark (&:is(.dark *));
+
+/*
+  Hardhatting 2026 — modernized "construction/hardhat" brand.
+  Warm cream canvas, ink surfaces, amber + safety-orange accents.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --radius: 0.85rem;
+
+  /* brand primitives */
+  --brand-cream: #faf6ee;
+  --brand-sand: #efe6d2;
+  --brand-ink: #1a1712;
+  --brand-amber: #ffbf00;
+  --brand-orange: #fd8602;
+  --brand-green: #2e7d52;
+  --brand-red: #c2402f;
+
+  /* status palette (seat states) */
+  --status-available: #ddd2ba;
+  --status-available-fg: #6b6149;
+  --status-assigned: #38342c;
+  --status-assigned-fg: #faf6ee;
+  --status-present: #2e7d52;
+  --status-present-fg: #ffffff;
+  --status-noshow: #c2402f;
+  --status-noshow-fg: #ffffff;
+  --status-flagged: #ffbf00;
+  --status-flagged-fg: #1a1712;
+
+  /* semantic tokens (shadcn) */
+  --background: #faf6ee;
+  --foreground: #1a1712;
+  --card: #fffdf8;
+  --card-foreground: #1a1712;
+  --popover: #fffdf8;
+  --popover-foreground: #1a1712;
+  --primary: #1a1712;
+  --primary-foreground: #faf6ee;
+  --secondary: #efe6d2;
+  --secondary-foreground: #1a1712;
+  --muted: #f1e9d8;
+  --muted-foreground: #8a7e60;
+  --accent: #ffbf00;
+  --accent-foreground: #1a1712;
+  --destructive: #c2402f;
+  --destructive-foreground: #ffffff;
+  --border: #e4d9bf;
+  --input: #ded2b4;
+  --ring: #fd8602;
 }
 
 @theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 10px);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-sand: var(--brand-sand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-amber: var(--brand-amber);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-green: var(--brand-green);
+  --color-brand-red: var(--brand-red);
+
+  --color-present: var(--status-present);
+  --color-noshow: var(--status-noshow);
+  --color-flagged: var(--status-flagged);
+  --color-assigned: var(--status-assigned);
+  --color-available: var(--status-available);
+
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+  --font-display: var(--font-league), "Hanken Grotesk", sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--brand-amber) 45%, transparent);
+    color: var(--brand-ink);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@utility font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+/* subtle entrance used across screens */
+@keyframes hh-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@utility animate-fade-up {
+  animation: hh-fade-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* construction tape / hazard accent stripe */
+@utility hazard-stripe {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--brand-ink) 0 12px,
+    var(--brand-amber) 12px 24px
+  );
+}
+
+/* hide scrollbars on horizontal nav while keeping scroll */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* suppress html5-qrcode's built-in scan-box overlay — we draw our own reticle */
+#hhc-camera #qr-shaded-region,
+#hhc-camera img {
+  display: none !important;
+}
+/* the library sets inline width/height on the <video>; force it to cover the
+   whole square viewport so there is no letterbox seam */
+#hhc-camera,
+#hhc-camera video {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+}
+#hhc-camera video {
+  object-fit: cover !important;
+}
+
+/* QR scanner laser sweep */
+@keyframes hh-scan {
+  0% {
+    top: 12%;
+  }
+  50% {
+    top: 82%;
+  }
+  100% {
+    top: 12%;
+  }
+}
+@utility animate-scan {
+  animation: hh-scan 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* gentle pulse for the reticle brackets while scanning */
+@keyframes hh-reticle {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+@utility animate-reticle {
+  animation: hh-reticle 2.4s ease-in-out infinite;
 }

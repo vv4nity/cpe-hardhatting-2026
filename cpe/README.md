@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hardhatting 2026 — Attendance & QR Seating
 
-## Getting Started
+A modernized rebuild of the *Hardhatting Ceremony 2026* attendance & QR seating
+management system. Originally a single bundled HTML file (a custom React +
+`{{ }}` templating runtime with inline styles); now a **Next.js (App Router) +
+React 19 + TypeScript + Tailwind CSS v4 + shadcn-style UI** application.
 
-First, run the development server:
+> **Front-only demo.** All data is deterministically generated in-memory and the
+> magic-link sign-in is simulated. The data and auth layers are isolated behind
+> seams (`src/lib/data/source.ts`, `src/lib/auth.ts`) so a real backend
+> (passwordless auth + database) can be dropped in without touching the screens.
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Roles & screens
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Sign in from `/login` and pick a demo role:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Role | Routes |
+| --- | --- |
+| **Attendee** | Dashboard · My QR · Seating · Profile |
+| **Block President** | + Block Oversight (roster & block stats) |
+| **Scanner** | Full-screen `/scanner`: live camera QR (Html5Qrcode), manual + simulated scans, scan-result modal |
+| **Admin** | Overview (metrics, check-in chart, live activity, block table) · Seating Map (search/filter/zoom) · Import & Export (CSV) |
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+  app/                     # App Router routes
+    (auth)/login/          # magic-link + demo role picker
+    (app)/                 # authenticated shell (nav + guard)
+      dashboard|qr|seating|oversight|profile
+      admin/overview|seating|import
+    scanner/               # full-screen scanner (own guard)
+  components/
+    ui/                    # shadcn-style primitives (Radix + Tailwind)
+    app/                   # shell, nav, auth gate, page header
+    brand/                 # logo / wordmark
+    seating/               # seat map + selected-seat panel
+    scanner/               # scanner screen + scan-result dialog
+  lib/
+    store.ts               # Zustand store (session + UI + actions)
+    data/                  # deterministic mock dataset + data-source seam
+    auth.ts                # mock magic-link / role resolution
+    views.ts               # derived data (metrics, chart, roster, blocks)
+    status.ts | format.ts | nav.ts | types.ts
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+State lives in a single Zustand store; the session is persisted to
+`localStorage` (rehydrated client-side to avoid SSR mismatches). The mock
+dataset (500 seats across Blocks A–E) is generated from a seeded PRNG so server
+and client render identical data.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Replacing the mock backend later
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Data:** swap the body of `loadDataset()` in `src/lib/data/source.ts` for a
+  fetch; callers keep the same `Dataset` shape.
+- **Auth:** replace `resolveDemoUser()` in `src/lib/auth.ts` and the login page's
+  send/verify steps with real magic-link calls; the rest depends only on the
+  returned `SessionUser`.
