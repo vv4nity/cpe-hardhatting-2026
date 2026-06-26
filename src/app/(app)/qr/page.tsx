@@ -23,17 +23,21 @@ export default function QrPage() {
 
   const [saving, setSaving] = useState(false);
 
+  const passInfo = () => ({
+    name: user.name,
+    email: user.email,
+    initials: user.initials,
+    seat: user.seat || "—",
+    block: blockId,
+    id: user.id || "—",
+    statusLabel: cfg.label,
+    payload,
+  });
+
   async function savePng() {
     setSaving(true);
     try {
-      await downloadPassPng({
-        name: user.name,
-        seat: user.seat || "—",
-        block: blockId,
-        id: user.id || "—",
-        statusLabel: cfg.label,
-        payload,
-      });
+      await downloadPassPng(passInfo());
       showToast("Pass saved as PNG", "ok");
     } catch {
       showToast("Couldn't save the pass image", "err");
@@ -42,10 +46,19 @@ export default function QrPage() {
     }
   }
 
-  function addToWallet(provider: "Apple" | "Google") {
-    // Real wallet passes require server-side signing (Apple PassKit cert /
-    // Google Wallet service account). Stubbed until the backend is connected.
-    showToast(`${provider} Wallet will be available once the backend is connected`, "warn");
+  async function addToWallet(provider: "Apple" | "Google") {
+    // Native wallet passes need server-side signing (Apple PassKit cert /
+    // Google Wallet service account). Until the backend is connected, hand the
+    // user the same high-quality ticket image so they can keep it.
+    setSaving(true);
+    try {
+      await downloadPassPng(passInfo());
+      showToast(`${provider} Wallet needs the backend — saved your pass image`, "warn");
+    } catch {
+      showToast("Couldn't save the pass image", "err");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -149,8 +162,8 @@ export default function QrPage() {
             </button>
           </div>
           <p className="text-center text-xs text-muted-foreground">
-            Add to Apple / Google Wallet activates once the event backend is
-            connected.
+            Native Apple / Google Wallet activates once the event backend is
+            connected — for now they save your pass image.
           </p>
         </div>
       </div>

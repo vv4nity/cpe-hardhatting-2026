@@ -88,10 +88,10 @@ export default function LoginPage() {
           {!sent ? (
             <>
               <h1 className="font-display text-4xl leading-none tracking-wide lg:text-5xl">
-                WELCOME BACK
+                HARD HATS ON
               </h1>
               <p className="mt-2 text-sm text-muted-foreground lg:text-base">
-                Sign in with a magic link to access the event control system.
+                Sign in to your Hardhatting 2026 pass with a magic link.
               </p>
 
               <form
