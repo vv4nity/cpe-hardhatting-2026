@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Building2, Download, Hash, Loader2, MapPin, User } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { STATUS } from "@/lib/status";
 import type { SeatStatus } from "@/lib/types";
 import { downloadPassPng } from "@/lib/pass-image";
 import { PageHeader } from "@/components/app/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, passPayload } from "@/components/qr-code";
 import { AppleWalletIcon, GoogleWalletIcon } from "@/components/brand/wallet-icons";
@@ -55,49 +56,64 @@ export default function QrPage() {
       />
 
       <div className="mx-auto max-w-md space-y-4">
-        <Card className="overflow-hidden">
-          <div className="h-1.5 w-full hazard-stripe" />
-          <CardContent className="p-7 text-center">
-            <div className="flex items-center justify-center gap-4 text-left">
-              <span className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-secondary text-xl font-bold text-muted-foreground shadow-sm ring-4 ring-card">
-                {user.initials || <User className="size-8" />}
-              </span>
-              <div className="min-w-0">
-                <div className="truncate font-display text-2xl tracking-wide">
-                  {user.name}
-                </div>
-                <div className="truncate text-sm text-muted-foreground">
-                  {user.email}
-                </div>
+        <Card className="overflow-hidden rounded-3xl p-0 shadow-md">
+          {/* hero banner */}
+          <div className="relative aspect-[41/18] w-full">
+            <Image
+              src="/main cover landscape.jpg"
+              alt="Hardhatting Ceremony 2026"
+              fill
+              priority
+              sizes="(max-width: 768px) 100vw, 28rem"
+              className="object-cover"
+            />
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-brand-ink/70 to-transparent" />
+            <span className="absolute right-4 top-3 inline-flex items-center gap-1.5 rounded-full bg-brand-amber px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-ink shadow-sm">
+              Admission Pass
+            </span>
+          </div>
+
+          {/* attendee row */}
+          <div className="flex items-center gap-3.5 px-6 pb-4 pt-5">
+            <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-secondary text-lg font-bold text-muted-foreground shadow-sm ring-4 ring-card">
+              {user.initials || <User className="size-7" />}
+            </span>
+            <div className="min-w-0">
+              <div className="truncate font-display text-xl tracking-wide">
+                {user.name}
+              </div>
+              <div className="truncate text-sm text-muted-foreground">
+                {user.email}
               </div>
             </div>
+          </div>
 
-            <div className="mx-auto my-6 w-60 rounded-3xl border border-border bg-white p-5 shadow-sm">
+          {/* details */}
+          <div className="grid grid-cols-3 gap-2.5 px-6">
+            <Meta icon={Hash} label="ID" value={user.id || "—"} />
+            <Meta icon={MapPin} label="Seat" value={user.seat || "—"} />
+            <Meta icon={Building2} label="Block" value={blockId} />
+          </div>
+
+          {/* perforation */}
+          <div className="relative my-5 h-5">
+            <span className="absolute left-0 top-1/2 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-background" />
+            <span className="absolute right-0 top-1/2 size-5 -translate-y-1/2 translate-x-1/2 rounded-full bg-background" />
+            <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-border" />
+          </div>
+
+          {/* QR stub */}
+          <div className="px-6 pb-7 text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              Scan at the gate
+            </p>
+            <div className="mx-auto mt-3 w-56 max-w-full rounded-3xl border border-border bg-white p-5 shadow-sm">
               <QrCode value={payload} />
             </div>
-
-            <span
-              className="inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-bold uppercase tracking-wide"
-              style={{ background: cfg.c, color: cfg.fg }}
-            >
-              <span
-                className="size-2 rounded-full"
-                style={{ background: cfg.fg }}
-              />
-              {cfg.label}
-            </span>
-
-            <div className="mt-6 grid grid-cols-3 gap-2.5 text-left">
-              <Meta icon={Hash} label="ID" value={user.id || "—"} />
-              <Meta icon={MapPin} label="Seat" value={user.seat || "—"} />
-              <Meta icon={Building2} label="Block" value={blockId} />
-            </div>
-
-            <p className="mt-6 text-xs text-muted-foreground">
-              Pass code:{" "}
-              <span className="font-mono">{payload}</span>
+            <p className="mt-4 text-xs text-muted-foreground">
+              Pass code: <span className="font-mono">{payload}</span>
             </p>
-          </CardContent>
+          </div>
         </Card>
 
         {/* save / wallet actions */}

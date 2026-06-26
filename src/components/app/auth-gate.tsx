@@ -6,18 +6,7 @@ import { useApp } from "@/lib/store";
 import { useHydrated } from "@/lib/use-hydrated";
 import { homeFor } from "@/lib/nav";
 import type { Role } from "@/lib/types";
-import { Logo } from "@/components/brand/logo";
-
-function Splash() {
-  return (
-    <div className="grid min-h-dvh place-items-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <Logo className="size-14 animate-pulse" />
-        <p className="text-sm font-medium text-muted-foreground">Loading…</p>
-      </div>
-    </div>
-  );
-}
+import { BrandLoader } from "@/components/brand/brand-loader";
 
 /**
  * Client route guard. Waits for session rehydration, then redirects
@@ -45,6 +34,6 @@ export function AuthGate({
     }
   }, [hydrated, user, allowed, router]);
 
-  if (!hydrated || !user || !allowed) return <Splash />;
+  if (!hydrated || !user || !allowed) return <BrandLoader />;
   return <>{children}</>;
 }

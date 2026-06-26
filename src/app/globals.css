@@ -170,6 +170,44 @@
   object-fit: cover !important;
 }
 
+/* brand loader: orange highlight sweeping across ink text */
+@keyframes hh-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+@utility text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--brand-ink) 0%,
+    var(--brand-ink) 38%,
+    var(--brand-orange) 50%,
+    var(--brand-ink) 62%,
+    var(--brand-ink) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: hh-shimmer 2.4s linear infinite;
+}
+
+/* indeterminate loader bar */
+@keyframes hh-loadbar {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(360%);
+  }
+}
+@utility animate-loadbar {
+  animation: hh-loadbar 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* QR scanner laser sweep */
 @keyframes hh-scan {
   0% {
