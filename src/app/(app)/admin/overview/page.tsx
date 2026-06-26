@@ -144,7 +144,7 @@ export default function OverviewPage() {
       {/* block table */}
       <Card>
         <CardContent className="p-0">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4 sm:px-6">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
               Attendance by section
             </h2>
@@ -161,7 +161,39 @@ export default function OverviewPage() {
               </Button>
             </div>
           </div>
-          <div className="overflow-x-auto">
+          {/* mobile: section cards */}
+          <div className="space-y-2.5 p-4 lg:hidden">
+            {blocks.map((b) => (
+              <button
+                key={b.block}
+                onClick={() => setOpenSection(b.block)}
+                className="block w-full rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-brand-amber/50 active:scale-[0.99]"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-semibold">{b.block}</span>
+                  <span className="flex items-center gap-1 text-sm font-bold tabular-nums">
+                    {b.pct}%
+                    <ChevronRight className="size-4 text-muted-foreground" />
+                  </span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-brand-green"
+                    style={{ width: `${b.pct}%` }}
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-4 gap-2 text-center">
+                  <Stat label="Total" value={b.total} />
+                  <Stat label="Present" value={b.present} tone="text-brand-green" />
+                  <Stat label="Absent" value={b.absent} />
+                  <Stat label="No-show" value={b.noShow} tone="text-brand-red" />
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* desktop: table */}
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -218,6 +250,27 @@ export default function OverviewPage() {
         section={openSection}
         onClose={() => setOpenSection(null)}
       />
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: string;
+}) {
+  return (
+    <div className="rounded-lg bg-secondary/40 py-1.5">
+      <div className={`text-base font-bold leading-none ${tone ?? ""}`}>
+        {value}
+      </div>
+      <div className="mt-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
     </div>
   );
 }
