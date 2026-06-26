@@ -57,32 +57,37 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
-      {/* brand cover — landscape on mobile, portrait on desktop */}
-      <div className="relative bg-brand-ink lg:flex-1">
-        {/* mobile: full landscape poster */}
-        <Image
-          src="/main cover landscape.jpg"
-          alt="Hardhatting 2026 — Coded for the Future · July 1, 2026 · Bulwagang Balagtas"
-          width={820}
-          height={360}
-          priority
-          sizes="100vw"
-          className="block h-auto w-full lg:hidden"
-        />
-        {/* desktop: portrait poster fills the panel */}
+      {/* desktop brand cover (portrait poster) */}
+      <div className="relative hidden bg-brand-ink lg:block lg:flex-1">
         <Image
           src="/main cover portrait.jpg"
           alt="Hardhatting 2026 — Coded for the Future · July 1, 2026 · Bulwagang Balagtas"
           fill
           priority
           sizes="50vw"
-          className="hidden object-contain object-center lg:block"
+          className="object-contain object-center"
         />
       </div>
 
       {/* form */}
-      <div className="flex flex-1 items-center justify-center bg-background px-5 py-10 sm:px-8">
+      <div className="flex flex-1 items-center justify-center bg-background px-5 py-8 sm:px-8 sm:py-10">
         <div className="w-full max-w-sm animate-fade-up">
+          {/* mobile: album-cover poster */}
+          <div className="mb-7 flex justify-center lg:hidden">
+            <div className="relative w-40 overflow-hidden rounded-2xl shadow-xl ring-1 ring-brand-ink/10">
+              <Image
+                src="/main cover portrait.jpg"
+                alt="Hardhatting Ceremony 2026"
+                width={1200}
+                height={1500}
+                priority
+                sizes="160px"
+                className="h-auto w-full"
+              />
+              <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
+            </div>
+          </div>
+
           {!sent ? (
             <>
               <h1 className="font-display text-5xl leading-none tracking-wide">
