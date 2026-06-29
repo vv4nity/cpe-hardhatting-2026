@@ -10,7 +10,7 @@ import { BrandLoader } from "@/components/brand/brand-loader";
 
 /**
  * Client route guard. Waits for session rehydration, then redirects
- * unauthenticated users to /login and out-of-role users to their home.
+ * unauthenticated users to the homepage and out-of-role users to their home.
  */
 export function AuthGate({
   roles,
@@ -28,7 +28,7 @@ export function AuthGate({
   useEffect(() => {
     if (!hydrated) return;
     if (!user) {
-      router.replace("/login");
+      router.replace("/");
     } else if (!allowed) {
       router.replace(homeFor(user.role));
     }

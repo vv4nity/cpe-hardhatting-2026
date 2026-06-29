@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApp } from "@/lib/store";
 import { STATUS, STATUS_ORDER } from "@/lib/status";
+import { SECTIONS, SECTION_COLORS, type Section } from "@/lib/sections";
 import type { BlockSide, SeatStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -14,10 +15,24 @@ export interface SeatVM {
   colLetter: string;
   rowNum: number;
   status: SeatStatus;
+  block: string;
   dim: boolean;
   selected: boolean;
   isYou: boolean;
   matched: boolean;
+}
+
+type ColorMode = "status" | "section";
+
+/** Fill color for a seat given the current color mode. */
+function seatFill(s: SeatVM, mode: ColorMode): { c: string; fg: string } {
+  if (mode === "section") {
+    if (s.block && s.block in SECTION_COLORS) {
+      return SECTION_COLORS[s.block as Section];
+    }
+    return { c: STATUS.available.c, fg: STATUS.available.fg };
+  }
+  return STATUS[s.status];
 }
 
 /** Build seat view-models, mirroring the original seat-filtering logic. */
@@ -64,6 +79,7 @@ export function useSeatVMs(presScope?: string | null): {
         colLetter: seat.colLetter,
         rowNum: seat.rowNum,
         status,
+        block: seat.blockId,
         dim,
         selected: selectedSeat === seat.label,
         isYou,
@@ -87,6 +103,7 @@ export function SeatMap({
 }) {
   const storeCell = useApp((s) => s.cellSize);
   const selectSeat = useApp((s) => s.selectSeat);
+  const mode = useApp((s) => s.seatColorMode);
   const { seats } = useSeatVMs(presScope);
   const isDesktop = useIsDesktop();
 
@@ -111,12 +128,14 @@ export function SeatMap({
           <FluidBlock
             letters={LEFT_LETTERS}
             seats={left}
+            mode={mode}
             onSelect={selectSeat}
           />
           <div className="w-2 shrink-0 self-stretch border-x border-dashed border-border" />
           <FluidBlock
             letters={RIGHT_LETTERS}
             seats={right}
+            mode={mode}
             onSelect={selectSeat}
           />
         </div>
@@ -136,6 +155,7 @@ export function SeatMap({
             cellSize={storeCell}
             gap={gap}
             numbersSide="left"
+            mode={mode}
             onSelect={selectSeat}
           />
           <div
@@ -145,10 +165,11 @@ export function SeatMap({
           <Block
             letters={RIGHT_LETTERS}
             seats={right}
-            rows={21}
+            rows={20}
             cellSize={storeCell}
             gap={gap}
             numbersSide="right"
+            mode={mode}
             onSelect={selectSeat}
           />
         </div>
@@ -161,10 +182,12 @@ export function SeatMap({
 function FluidBlock({
   letters,
   seats,
+  mode,
   onSelect,
 }: {
   letters: string[];
   seats: SeatVM[];
+  mode: ColorMode;
   onSelect: (label: string) => void;
 }) {
   const colStyle = {
@@ -184,7 +207,7 @@ function FluidBlock({
       </div>
       <div className="grid gap-0.5 pt-5" style={colStyle}>
         {seats.map((s) => {
-          const cfg = STATUS[s.status];
+          const cfg = seatFill(s, mode);
           const ring = s.isYou
             ? "#FD8602"
             : s.selected || s.matched
@@ -196,7 +219,7 @@ function FluidBlock({
               type="button"
               data-seat={s.label}
               onClick={() => onSelect(s.label)}
-              title={`${s.label} · ${cfg.label}`}
+              title={`${s.label} · ${STATUS[s.status].label}${s.block ? " · " + s.block : ""}`}
               className="relative grid aspect-square w-full place-items-center text-[7px] font-bold leading-none transition-opacity"
               style={{
                 gridColumnStart: s.colWithinBlock + 1,
@@ -245,6 +268,7 @@ function Block({
   cellSize,
   gap,
   numbersSide,
+  mode,
   onSelect,
 }: {
   letters: string[];
@@ -253,6 +277,7 @@ function Block({
   cellSize: number;
   gap: number;
   numbersSide: "left" | "right";
+  mode: ColorMode;
   onSelect: (label: string) => void;
 }) {
   const fontSize = Math.max(7, Math.round(cellSize * 0.34));
@@ -303,7 +328,7 @@ function Block({
           }}
         >
         {seats.map((s) => {
-          const cfg = STATUS[s.status];
+          const cfg = seatFill(s, mode);
           const ring = s.isYou
             ? "#FD8602"
             : s.selected || s.matched
@@ -315,7 +340,7 @@ function Block({
               type="button"
               data-seat={s.label}
               onClick={() => onSelect(s.label)}
-              title={`${s.label} · ${cfg.label}`}
+              title={`${s.label} · ${STATUS[s.status].label}${s.block ? " · " + s.block : ""}`}
               className="grid place-items-center font-bold transition-opacity"
               style={{
                 gridColumnStart: s.colWithinBlock + 1,
@@ -352,15 +377,47 @@ function Block({
 }
 
 export function SeatLegend({ className }: { className?: string }) {
+  const mode = useApp((s) => s.seatColorMode);
+  const setMode = useApp((s) => s.setSeatColorMode);
+
+  const items =
+    mode === "section"
+      ? SECTIONS.map((s) => ({
+          key: s,
+          color: SECTION_COLORS[s].c,
+          label: s.replace("BSCPE ", ""),
+        }))
+      : STATUS_ORDER.map((k) => ({
+          key: k,
+          color: STATUS[k].c,
+          label: STATUS[k].label,
+        }));
+
   return (
-    <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2", className)}>
-      {STATUS_ORDER.map((k) => (
-        <span key={k} className="flex items-center gap-1.5 text-xs font-medium">
-          <span
-            className="size-3 rounded-[4px]"
-            style={{ background: STATUS[k].c }}
-          />
-          {STATUS[k].label}
+    <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-2.5", className)}>
+      {/* color-by toggle */}
+      <div className="inline-flex rounded-lg border border-border bg-card p-0.5 text-xs font-semibold">
+        {(["section", "status"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={cn(
+              "rounded-md px-2.5 py-1 capitalize transition-colors",
+              mode === m
+                ? "bg-brand-ink text-brand-cream"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {m === "section" ? "Sections" : "Status"}
+          </button>
+        ))}
+      </div>
+
+      {items.map((it) => (
+        <span key={it.key} className="flex items-center gap-1.5 text-xs font-medium">
+          <span className="size-3 rounded-[4px]" style={{ background: it.color }} />
+          {it.label}
         </span>
       ))}
     </div>

@@ -1,10 +1,10 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Armchair,
-  FileUp,
   LayoutDashboard,
   Map,
   QrCode,
+  Send,
   User,
   Users,
 } from "lucide-react";
@@ -36,7 +36,7 @@ export function navTabsFor(role: Role): NavTab[] {
     return [
       { href: "/admin/overview", label: "Overview", short: "Overview", icon: LayoutDashboard },
       { href: "/admin/seating", label: "Seating Map", short: "Seating", icon: Map },
-      { href: "/admin/import", label: "Import & Export", short: "Import", icon: FileUp },
+      { href: "/admin/invitations", label: "Invitations", short: "Invites", icon: Send },
     ];
   }
   if (role === "president") {

@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# directory seed contains real student PII — do NOT commit
+supabase/seed.sql
+
+# staff login credentials
+supabase/staff-credentials.txt
+
+# Google Wallet service-account key (secret)
+google-wallet-key.json

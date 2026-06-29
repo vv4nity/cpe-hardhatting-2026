@@ -5,7 +5,6 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type {
   Attendee,
   Dataset,
-  Role,
   ScanResult,
   SeatStatus,
   SessionUser,
@@ -13,7 +12,6 @@ import type {
   ToastTone,
 } from "@/lib/types";
 import { loadDataset } from "@/lib/data/source";
-import { resolveDemoUser } from "@/lib/auth";
 import { initialsOf, minutesToTime } from "@/lib/format";
 import { STATUS } from "@/lib/status";
 
@@ -37,6 +35,8 @@ interface AppState {
   selectedSeat: string | null;
   /** focus mode: dim every seat except the signed-in attendee's own seat */
   focusMine: boolean;
+  /** how the seat map colors cells */
+  seatColorMode: "status" | "section";
 
   // profile
   profileEdit: boolean;
@@ -63,7 +63,6 @@ interface AppState {
   toasts: ToastMessage[];
 
   // actions
-  login: (role: Role, email?: string) => SessionUser;
   logout: () => void;
   showToast: (msg: string, tone?: ToastTone) => void;
   dismissToast: (id: number) => void;
@@ -74,6 +73,7 @@ interface AppState {
   selectSeat: (label: string) => void;
   clearSelectedSeat: () => void;
   setFocusMine: (v: boolean) => void;
+  setSeatColorMode: (m: "status" | "section") => void;
   zoom: (d: number) => void;
   refresh: () => void;
 
@@ -128,6 +128,7 @@ export const useApp = create<AppState>()(
       cellSize: 24,
       selectedSeat: null,
       focusMine: false,
+      seatColorMode: "section",
 
       profileEdit: false,
       editName: "",
@@ -137,7 +138,7 @@ export const useApp = create<AppState>()(
       offlineOn: false,
       manualVal: "",
       scanResult: null,
-      scanStats: { total: 128, success: 104, dup: 11 },
+      scanStats: { total: 0, success: 0, dup: 0 },
 
       importActive: false,
       importStage: "",
@@ -148,19 +149,6 @@ export const useApp = create<AppState>()(
       importTotal: 0,
 
       toasts: [],
-
-      login: (role, email) => {
-        const user = resolveDemoUser(role, get().data, email);
-        set({
-          user,
-          editName: user.name || "",
-          editEmail: user.email || "",
-          profileEdit: false,
-          selectedSeat: null,
-          scanResult: null,
-        });
-        return user;
-      },
 
       logout: () =>
         set({
@@ -185,6 +173,7 @@ export const useApp = create<AppState>()(
         set((s) => ({ selectedSeat: s.selectedSeat === label ? null : label })),
       clearSelectedSeat: () => set({ selectedSeat: null }),
       setFocusMine: (v) => set({ focusMine: v }),
+      setSeatColorMode: (m) => set({ seatColorMode: m }),
       zoom: (d) =>
         set((s) => ({ cellSize: Math.max(14, Math.min(42, s.cellSize + d)) })),
 

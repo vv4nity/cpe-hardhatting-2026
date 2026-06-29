@@ -34,9 +34,8 @@ export function resolveDemoUser(
   }
 
   const base =
-    data.attendees.find(
-      (a) => a.block === PRESIDENT_SECTION && a.status === "present",
-    ) || data.attendees[0];
+    data.attendees.find((a) => a.block === PRESIDENT_SECTION) ||
+    data.attendees[0];
 
   const user: SessionUser = {
     id: base.id,

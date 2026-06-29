@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronRight, Download, Map, RefreshCw, Upload } from "lucide-react";
+import { ChevronRight, Download, Map, RefreshCw, Send } from "lucide-react";
 import { useApp } from "@/lib/store";
 import {
   computeActivity,
@@ -155,8 +155,8 @@ export default function OverviewPage() {
                 </Link>
               </Button>
               <Button asChild variant="ghost" size="sm">
-                <Link href="/admin/import">
-                  <Upload /> Import
+                <Link href="/admin/invitations">
+                  <Send /> Invitations
                 </Link>
               </Button>
             </div>

@@ -13,6 +13,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { signOutEverywhere } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ const CAMERA_ID = "hhc-camera";
 export function ScannerScreen() {
   const user = useApp((s) => s.user)!;
   const data = useApp((s) => s.data);
-  const logout = useApp((s) => s.logout);
   const router = useRouter();
 
   const soundOn = useApp((s) => s.soundOn);
@@ -129,10 +129,10 @@ export function ScannerScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function signOut() {
+  async function signOut() {
     stopCamera();
-    logout();
-    router.replace("/login");
+    await signOutEverywhere();
+    router.replace("/");
   }
 
   return (

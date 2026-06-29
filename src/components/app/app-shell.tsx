@@ -6,6 +6,7 @@ import { ChevronDown, LogOut, ScanLine } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { navTabsFor } from "@/lib/nav";
 import { roleLabel } from "@/lib/format";
+import { signOutEverywhere } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/brand/logo";
 import { PartnerLogos } from "@/components/brand/partner-logos";
@@ -19,16 +20,15 @@ import {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const user = useApp((s) => s.user);
-  const logout = useApp((s) => s.logout);
   const pathname = usePathname();
   const router = useRouter();
 
   if (!user) return null;
   const tabs = navTabsFor(user.role);
 
-  function signOut() {
-    logout();
-    router.replace("/login");
+  async function signOut() {
+    await signOutEverywhere();
+    router.replace("/");
   }
 
   return (

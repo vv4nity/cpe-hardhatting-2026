@@ -7,7 +7,7 @@ import { useApp } from "@/lib/store";
  * The session store persists to localStorage with `skipHydration`, so it starts
  * empty on the server and on the first client paint (no mismatch). This hook
  * reports when rehydration has finished, letting route guards wait before they
- * decide whether to redirect to /login.
+ * decide whether to redirect an unauthenticated visitor.
  */
 export function useHydrated(): boolean {
   // Always start false so server prerender and first client paint agree; the

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useApp } from "@/lib/store";
+import { SupabaseProvider } from "./supabase-provider";
 import { Toaster } from "./toaster";
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -11,9 +12,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <>
+    <SupabaseProvider>
       {children}
       <Toaster />
-    </>
+    </SupabaseProvider>
   );
 }

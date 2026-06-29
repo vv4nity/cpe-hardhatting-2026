@@ -46,16 +46,38 @@ export default function QrPage() {
     }
   }
 
-  async function addToWallet(provider: "Apple" | "Google") {
-    // Native wallet passes need server-side signing (Apple PassKit cert /
-    // Google Wallet service account). Until the backend is connected, hand the
-    // user the same high-quality ticket image so they can keep it.
+  // Apple Wallet isn't wired (needs a paid Apple Developer cert) — save the
+  // high-quality ticket image so iPhone users still have their pass.
+  async function applePass() {
     setSaving(true);
     try {
       await downloadPassPng(passInfo());
-      showToast(`${provider} Wallet needs the backend — saved your pass image`, "warn");
+      showToast("Saved your pass image", "ok");
     } catch {
       showToast("Couldn't save the pass image", "err");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function googleWallet() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/wallet/google");
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || !body.url) {
+        if (body.error === "not_configured") {
+          showToast("Google Wallet isn't set up yet — saved your pass image", "warn");
+          await downloadPassPng(passInfo());
+        } else {
+          showToast("Couldn't create the wallet pass", "err");
+        }
+        return;
+      }
+      // hands off to the official Add-to-Google-Wallet flow
+      window.location.href = body.url as string;
+    } catch {
+      showToast("Couldn't create the wallet pass", "err");
     } finally {
       setSaving(false);
     }
@@ -145,25 +167,25 @@ export default function QrPage() {
             Save as PNG
           </Button>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              onClick={() => addToWallet("Apple")}
-              className="flex items-center justify-center gap-2 rounded-xl bg-black px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition-transform hover:brightness-110 active:scale-[0.98]"
-            >
-              <AppleWalletIcon className="size-5" />
-              Apple Wallet
-            </button>
-            <button
-              onClick={() => addToWallet("Google")}
-              className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-secondary/60 active:scale-[0.98]"
-            >
-              <GoogleWalletIcon className="size-5" />
-              Google Wallet
-            </button>
-          </div>
+          <button
+            onClick={googleWallet}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-3 py-3 text-sm font-semibold text-white shadow-sm transition-transform hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
+          >
+            <GoogleWalletIcon className="size-5" />
+            Add to Google Wallet
+          </button>
+          <button
+            onClick={applePass}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-secondary/60 active:scale-[0.98] disabled:opacity-60"
+          >
+            <AppleWalletIcon className="size-5" />
+            Save for Apple Wallet (image)
+          </button>
           <p className="text-center text-xs text-muted-foreground">
-            Native Apple / Google Wallet activates once the event backend is
-            connected — for now they save your pass image.
+            Google Wallet adds a real pass on Android. On iPhone, save the pass
+            image and present the QR at the gate.
           </p>
         </div>
       </div>
