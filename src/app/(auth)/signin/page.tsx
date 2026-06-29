@@ -1,17 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { useApp } from "@/lib/store";
 import { homeFor } from "@/lib/nav";
+import { AuthSplit } from "@/components/auth/auth-split";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PartnerLogos } from "@/components/brand/partner-logos";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -64,48 +62,15 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background lg:flex-row">
-      {/* cover */}
-      <div className="relative shrink-0 lg:h-dvh lg:w-[44%]">
-        <div className="h-1.5 w-full hazard-stripe lg:hidden" />
-        <Image
-          src="/main cover landscape.jpg"
-          alt="Hardhatting Ceremony 2026 — Coded for the Future"
-          width={820}
-          height={360}
-          priority
-          sizes="(max-width: 1024px) 100vw, 0px"
-          className="block h-auto w-full object-cover lg:hidden"
-        />
-        <Image
-          src="/main cover portrait.jpg"
-          alt="Hardhatting Ceremony 2026 — Coded for the Future"
-          fill
-          priority
-          sizes="(max-width: 1024px) 0px, 44vw"
-          className="hidden object-cover lg:block"
-        />
-      </div>
+    <AuthSplit>
+      <h1 className="font-display text-4xl leading-none tracking-wide sm:text-5xl">
+        HARD HATS ON
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Sign in to view your seat and digital pass.
+      </p>
 
-      {/* form side */}
-      <div className="flex flex-1 flex-col px-6 py-6 sm:px-10">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back
-        </Link>
-
-        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-8 animate-fade-up">
-          <h1 className="font-display text-4xl leading-none tracking-wide sm:text-5xl">
-            HARD HATS ON
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to view your seat and digital pass.
-          </p>
-
-          {isSupabaseConfigured ? (
+      {isSupabaseConfigured ? (
             <form className="mt-6 space-y-3" onSubmit={submit}>
               <div className="space-y-1.5">
                 <Label htmlFor="em" className="text-sm">
@@ -170,16 +135,10 @@ export default function SignInPage() {
             </div>
           )}
 
-          <p className="mt-6 text-center text-xs text-muted-foreground">
-            Invited but haven&apos;t set up your account? Open the activation link
-            in your email.
-          </p>
-        </div>
-
-        <div className="mx-auto w-full max-w-sm border-t border-border/70 pt-5">
-          <PartnerLogos />
-        </div>
-      </div>
-    </div>
+      <p className="mt-6 text-center text-xs text-muted-foreground">
+        Invited but haven&apos;t set up your account? Open the activation link in
+        your email.
+      </p>
+    </AuthSplit>
   );
 }

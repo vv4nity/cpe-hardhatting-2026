@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { SECTIONS } from "@/lib/sections";
 import { homeFor } from "@/lib/nav";
 import type { Role } from "@/lib/types";
-import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthSplit } from "@/components/auth/auth-split";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,49 +101,52 @@ export default function ActivatePage() {
 
   if (phase === "checking") {
     return (
-      <AuthShell title="ACTIVATE">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+      <AuthSplit>
+        <Heading>ACTIVATE</Heading>
+        <div className="mt-6 flex items-center gap-3 text-sm text-muted-foreground">
           <Loader2 className="size-4 animate-spin" />
           Checking your invitation…
         </div>
-      </AuthShell>
+      </AuthSplit>
     );
   }
 
   if (phase === "invalid") {
     return (
-      <AuthShell title="LINK EXPIRED">
-        <p className="text-sm text-muted-foreground">
+      <AuthSplit>
+        <Heading>LINK EXPIRED</Heading>
+        <p className="mt-6 text-sm text-muted-foreground">
           This activation link is invalid or has expired. Ask an organizer to
           re-send your invitation, then open the newest email.
         </p>
         <Button asChild variant="outline" size="lg" className="mt-5 w-full">
           <Link href="/signin">Go to sign in</Link>
         </Button>
-      </AuthShell>
+      </AuthSplit>
     );
   }
 
   if (phase === "done") {
     return (
-      <AuthShell title="YOU'RE IN">
-        <div className="grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
+      <AuthSplit>
+        <Heading>YOU&apos;RE IN</Heading>
+        <div className="mt-6 grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
           <ShieldCheck className="size-7" />
         </div>
         <p className="mt-4 text-sm text-muted-foreground">
           Your account is active and your seat is claimed. Taking you to your
           dashboard…
         </p>
-      </AuthShell>
+      </AuthSplit>
     );
   }
 
   return (
-    <AuthShell
-      title="ACTIVATE YOUR SEAT"
-      subtitle="Confirm your identity, then set a password you'll use to sign in."
-    >
-      <div className="mb-4 rounded-xl border border-border bg-secondary/40 px-3.5 py-2.5 text-sm">
+    <AuthSplit>
+      <Heading sub="Confirm your identity, then set a password you'll use to sign in.">
+        ACTIVATE YOUR SEAT
+      </Heading>
+      <div className="mb-4 mt-6 rounded-xl border border-border bg-secondary/40 px-3.5 py-2.5 text-sm">
         <span className="text-muted-foreground">Invitation for </span>
         <span className="font-semibold">{invitedEmail}</span>
       </div>
@@ -191,6 +194,23 @@ export default function ActivatePage() {
           <ArrowRight />
         </Button>
       </form>
-    </AuthShell>
+    </AuthSplit>
+  );
+}
+
+function Heading({
+  children,
+  sub,
+}: {
+  children: React.ReactNode;
+  sub?: string;
+}) {
+  return (
+    <>
+      <h1 className="font-display text-4xl leading-none tracking-wide sm:text-5xl">
+        {children}
+      </h1>
+      {sub && <p className="mt-2 text-sm text-muted-foreground">{sub}</p>}
+    </>
   );
 }
