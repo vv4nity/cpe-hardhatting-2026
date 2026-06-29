@@ -289,6 +289,20 @@ export default function InvitationsPage() {
       r.email.toLowerCase().includes(resultSearch.toLowerCase()),
   );
 
+  const drillList = useMemo(() => {
+    if (drill === null) return [];
+    const q = drillSearch.trim().toLowerCase();
+    return recipients
+      .filter((r) => (drill === "registered" ? r.registered : !r.registered))
+      .filter(
+        (r) =>
+          !q ||
+          r.name.toLowerCase().includes(q) ||
+          r.email.toLowerCase().includes(q) ||
+          r.seat.toLowerCase().includes(q),
+      );
+  }, [recipients, drill, drillSearch]);
+
   const fixMatches = useMemo(() => {
     const q = fixQuery.trim().toLowerCase();
     if (!q) return [];
@@ -619,8 +633,8 @@ export default function InvitationsPage() {
       {/* drill-down dialog */}
       <Dialog open={drill !== null} onOpenChange={(o) => !o && setDrill(null)}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="font-display text-2xl tracking-wide">
+          <DialogHeader className="pr-8">
+            <DialogTitle className="font-display text-3xl font-normal leading-tight tracking-wide">
               {drill === "registered" ? "REGISTERED" : "NOT YET REGISTERED"}
             </DialogTitle>
             <DialogDescription>
@@ -641,18 +655,16 @@ export default function InvitationsPage() {
           </div>
 
           <div className="max-h-[55vh] space-y-1.5 overflow-y-auto pr-1">
-            {recipients
-              .filter((r) => (drill === "registered" ? r.registered : !r.registered))
-              .filter((r) => {
-                const q = drillSearch.trim().toLowerCase();
-                return (
-                  !q ||
-                  r.name.toLowerCase().includes(q) ||
-                  r.email.toLowerCase().includes(q) ||
-                  r.seat.toLowerCase().includes(q)
-                );
-              })
-              .map((r) => (
+            {drillList.length === 0 && (
+              <div className="rounded-xl border border-dashed border-border bg-secondary/30 py-10 text-center text-sm text-muted-foreground">
+                {drill === "registered"
+                  ? "No students have registered yet."
+                  : drillSearch
+                    ? "No matches."
+                    : "Everyone has registered. 🎉"}
+              </div>
+            )}
+            {drillList.map((r) => (
                 <div
                   key={r.id}
                   className="rounded-xl border border-border bg-card p-3"

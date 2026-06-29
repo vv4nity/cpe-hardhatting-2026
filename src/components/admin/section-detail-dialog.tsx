@@ -50,7 +50,7 @@ export function SectionDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg overflow-hidden p-0">
+      <DialogContent className="max-w-lg gap-0 overflow-hidden p-0">
         <div className="relative overflow-hidden bg-brand-ink p-6 text-brand-cream">
           <div className="absolute inset-x-0 top-0 h-1 hazard-stripe opacity-90" />
           <DialogHeader>
@@ -86,12 +86,12 @@ export function SectionDetailDialog({
           </div>
         </div>
 
-        <div className="flex max-h-[42vh] flex-col overflow-y-auto px-6 pb-2">
-          <div className="sticky top-0 flex items-center justify-between gap-2 bg-card pb-2 pt-4">
-            <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              Roster · {roster.length}
-            </span>
-          </div>
+        <div className="flex items-center justify-between gap-2 border-b border-border px-6 pb-2.5 pt-4">
+          <span className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            Roster · {roster.length}
+          </span>
+        </div>
+        <div className="max-h-[42vh] overflow-y-auto px-6 py-1">
           <ul className="divide-y divide-border/60">
             {roster.map((r) => {
               const cfg = STATUS[r.status];
