@@ -29,8 +29,8 @@ const HINTS: Record<SeatStatus, string> = {
 const EVENT_FACTS = [
   { icon: CalendarClock, label: "Date", value: "July 1, 2026 · Wednesday" },
   { icon: MapPin, label: "Venue", value: "Bulwagang Balagtas" },
-  { icon: Timer, label: "Call time", value: "7:00 AM" },
-  { icon: HardHat, label: "Dress code", value: "Hardhat & formal attire" },
+  { icon: Timer, label: "Call time", value: "1:00 PM" },
+  { icon: HardHat, label: "Dress code", value: "Smart casual · white polo" },
 ];
 
 export default function DashboardPage() {
