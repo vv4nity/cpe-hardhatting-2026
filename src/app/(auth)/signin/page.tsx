@@ -171,10 +171,6 @@ export default function SignInPage() {
           )}
 
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Admin &amp; scanner staff: sign in above with your provided
-            credentials.
-          </p>
-          <p className="mt-2 text-center text-xs text-muted-foreground">
             Invited but haven&apos;t set up your account? Open the activation link
             in your email.
           </p>

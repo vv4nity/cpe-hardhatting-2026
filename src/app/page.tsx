@@ -44,14 +44,8 @@ export default function HomePage() {
       <div className="h-1.5 w-full shrink-0 hazard-stripe" />
 
       {/* top bar */}
-      <header className="mx-auto flex w-full max-w-6xl shrink-0 items-center justify-between px-5 py-3 sm:px-8 sm:py-4">
+      <header className="mx-auto flex w-full max-w-6xl shrink-0 items-center px-5 py-3 sm:px-8 sm:py-4">
         <Wordmark />
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/signin">
-            <LogIn className="size-4" />
-            Sign in
-          </Link>
-        </Button>
       </header>
 
       {/* hero */}
