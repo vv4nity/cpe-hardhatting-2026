@@ -97,7 +97,7 @@ function inviteHtml(name: string, link: string): string {
       @media only screen and (min-width:601px) {
         .pad { padding-left:40px !important; padding-right:40px !important; }
         .hero { padding:18px 18px 0 !important; }
-        .headline { max-width:340px !important; }
+        .headline { width:340px !important; }
       }
     </style>
   </head>
@@ -115,7 +115,7 @@ function inviteHtml(name: string, link: string): string {
           <!-- eyebrow + headline -->
           <tr><td class="pad" style="padding:28px 26px 0;">
             <div style="font-size:11px;font-weight:700;letter-spacing:0.2em;color:#ea580c;text-transform:uppercase;">CPE Hardhatting Ceremony 2026</div>
-            <img src="cid:headline" class="headline" alt="You're Invited" width="300" style="display:block;margin:12px 0 0;width:100%;max-width:300px;height:auto;border:0;outline:none;text-decoration:none;" />
+            <img src="cid:headline" class="headline" alt="You're Invited" width="300" height="62" style="display:block;margin:12px 0 0;width:300px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;" />
           </td></tr>
 
           <!-- body -->
