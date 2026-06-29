@@ -23,8 +23,8 @@ import { BrandLoader } from "@/components/brand/brand-loader";
 const FACTS = [
   { icon: CalendarClock, label: "Date", value: "July 1, 2026 · Wednesday" },
   { icon: MapPin, label: "Venue", value: "Bulwagang Balagtas" },
-  { icon: Timer, label: "Call time", value: "7:00 AM" },
-  { icon: HardHat, label: "Dress code", value: "Hardhat & formal attire" },
+  { icon: Timer, label: "Call time", value: "1:00 PM" },
+  { icon: HardHat, label: "Dress code", value: "Smart casual · white polo" },
 ];
 
 export default function HomePage() {
@@ -55,7 +55,7 @@ export default function HomePage() {
       </header>
 
       {/* hero */}
-      <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-5 px-5 pb-3 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:gap-14 lg:py-10">
+      <main className="mx-auto grid w-full max-w-6xl flex-1 content-center items-center gap-6 px-5 pb-3 sm:px-8 lg:grid-cols-[1.1fr_1fr] lg:content-center lg:gap-14 lg:py-10">
         {/* poster */}
         <div className="order-1 flex justify-center lg:order-2 lg:justify-end">
           {/* desktop: portrait */}
@@ -70,15 +70,15 @@ export default function HomePage() {
               className="h-auto w-full"
             />
           </div>
-          {/* mobile: landscape (compact) */}
-          <div className="w-full max-w-[260px] overflow-hidden rounded-2xl shadow-lg ring-1 ring-brand-ink/10 lg:hidden">
+          {/* mobile: landscape — fills the content width so it's proportional */}
+          <div className="w-full max-w-sm overflow-hidden rounded-3xl shadow-lg ring-1 ring-brand-ink/10 lg:hidden">
             <Image
               src="/main cover landscape.jpg"
               alt="Hardhatting Ceremony 2026 — Coded for the Future"
               width={820}
               height={360}
               priority
-              sizes="260px"
+              sizes="(max-width: 1024px) 100vw, 0px"
               className="h-auto w-full"
             />
           </div>
