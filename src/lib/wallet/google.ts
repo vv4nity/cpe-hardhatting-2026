@@ -14,16 +14,41 @@ interface ServiceAccount {
   private_key: string;
 }
 
-function loadServiceAccount(): ServiceAccount | null {
-  const file = process.env.GOOGLE_WALLET_SA_KEY_FILE;
-  if (!file) return null;
+function parseSA(raw: string): ServiceAccount | null {
   try {
-    const json = JSON.parse(fs.readFileSync(file, "utf8"));
+    const json = JSON.parse(raw);
     if (!json.client_email || !json.private_key) return null;
     return { client_email: json.client_email, private_key: json.private_key };
   } catch {
     return null;
   }
+}
+
+/**
+ * Loads the service-account key from (in order): a base64 env var, a raw-JSON
+ * env var, or a local file path. The env-var forms work on hosts like Vercel
+ * where the gitignored key file isn't deployed.
+ */
+function loadServiceAccount(): ServiceAccount | null {
+  const b64 = process.env.GOOGLE_WALLET_SA_KEY_B64;
+  if (b64) {
+    const sa = parseSA(Buffer.from(b64, "base64").toString("utf8"));
+    if (sa) return sa;
+  }
+  const inline = process.env.GOOGLE_WALLET_SA_JSON;
+  if (inline) {
+    const sa = parseSA(inline);
+    if (sa) return sa;
+  }
+  const file = process.env.GOOGLE_WALLET_SA_KEY_FILE;
+  if (file) {
+    try {
+      return parseSA(fs.readFileSync(file, "utf8"));
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 const ISSUER_ID = process.env.GOOGLE_WALLET_ISSUER_ID;
