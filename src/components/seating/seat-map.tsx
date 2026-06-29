@@ -55,7 +55,11 @@ export function useSeatVMs(presScope?: string | null): {
     const seats: SeatVM[] = data.seats.map((seat) => {
       const att = seat.attendeeId ? data.attMap[seat.attendeeId] : null;
       const status: SeatStatus = att ? att.status : "available";
-      const isYou = !!(att && user?.id && att.id === user.id);
+      // match by seat label — the data uses synthetic attendee ids, not the
+      // signed-in user's id, so comparing ids never works for real accounts
+      const isYou = !!(
+        user?.seat && seat.label.toUpperCase() === user.seat.toUpperCase()
+      );
 
       const inScope = presScope ? seat.blockId === presScope : true;
       let match = true;
@@ -360,7 +364,7 @@ function Block({
               }}
             >
               {s.isYou && (
-                <span className="pointer-events-none absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-orange px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-md">
+                <span className="pointer-events-none absolute -top-7 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand-orange px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg ring-2 ring-white">
                   You are here
                   <span className="absolute left-1/2 top-full size-2 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-brand-orange" />
                 </span>

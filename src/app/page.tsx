@@ -23,7 +23,7 @@ import { BrandLoader } from "@/components/brand/brand-loader";
 const FACTS = [
   { icon: CalendarClock, label: "Date", value: "July 1, 2026 · Wednesday" },
   { icon: MapPin, label: "Venue", value: "Bulwagang Balagtas" },
-  { icon: Timer, label: "Call time", value: "1:00 PM" },
+  { icon: Timer, label: "Call time", value: "12:00 PM" },
   { icon: HardHat, label: "Dress code", value: "Smart casual · white polo" },
 ];
 

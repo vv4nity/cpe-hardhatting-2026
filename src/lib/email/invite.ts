@@ -11,7 +11,7 @@ const SUBJECT = "You're invited — activate your CPE Hardhatting 2026 seat";
  */
 const EVENT = {
   date: "July 1, 2026",
-  time: "1:00 PM",
+  time: "12:00 PM",
   venue: "Bulwagang Balagtas",
   venueSub: "PUP Sta. Mesa, Manila",
 };
