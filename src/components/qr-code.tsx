@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { cn } from "@/lib/utils";
 
 /**
- * Renders `value` as a branded QR on a white tile. Draws at the module's own
- * resolution (scale) and lets CSS size it square, so it stays crisp at any
- * width and always keeps a scannable quiet zone + light/dark contrast.
+ * Renders `value` as a QR code as a square <img> (from a data URL). Using an
+ * <img> instead of a <canvas> keeps sizing reliable — it always fills its
+ * square box without stretching or overflowing.
  */
 export function QrCode({
   value,
@@ -16,29 +16,34 @@ export function QrCode({
   value: string;
   className?: string;
 }) {
-  const ref = useRef<HTMLCanvasElement>(null);
+  const [url, setUrl] = useState("");
 
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-    QRCode.toCanvas(canvas, value, {
+    QRCode.toDataURL(value, {
       margin: 2,
       scale: 8,
       color: { dark: "#1a1712ff", light: "#ffffffff" },
       errorCorrectionLevel: "M",
-    }).catch(() => {});
+    })
+      .then(setUrl)
+      .catch(() => {});
   }, [value]);
 
-  // The square wrapper owns the aspect ratio; the canvas fills it with
-  // object-contain so the QR is always drawn square (never stretched/squeezed),
-  // regardless of how the browser sizes a replaced <canvas> element.
   return (
-    <div className={cn("aspect-square w-full max-w-full", className)}>
-      <canvas
-        ref={ref}
-        aria-label="Attendance QR pass"
-        className="block size-full object-contain"
-      />
+    <div
+      className={cn(
+        "aspect-square w-full max-w-full overflow-hidden",
+        className,
+      )}
+    >
+      {url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt="Attendance QR pass"
+          className="block size-full"
+        />
+      )}
     </div>
   );
 }

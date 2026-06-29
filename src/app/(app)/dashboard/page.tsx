@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { STATUS } from "@/lib/status";
+import { firstNameOf } from "@/lib/format";
 import { blockSummary } from "@/lib/views";
 import type { SeatStatus } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
@@ -42,7 +43,7 @@ export default function DashboardPage() {
   const cfg = STATUS[myStatus];
   const blockId = user.block || user.presidentBlock || "—";
   const summary = blockId !== "—" ? blockSummary(data, blockId) : null;
-  const firstName = user.name.split(" ")[0] || user.name;
+  const firstName = firstNameOf(user.name) || user.name;
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -123,7 +124,7 @@ export default function DashboardPage() {
                     Live
                   </span>
                 </div>
-                <div className="mt-3 rounded-xl bg-white p-3 shadow-inner">
+                <div className="mx-auto mt-3 w-full max-w-[200px] rounded-xl bg-white p-3 shadow-inner">
                   <QrCode value={passPayload(user.id, user.seat)} />
                 </div>
                 <div className="mt-3 font-display text-lg leading-tight tracking-wide">

@@ -27,6 +27,19 @@ export function initialsOf(name: string): string {
     .toUpperCase();
 }
 
+/**
+ * Full first name from a stored "Surname, First M.I." name.
+ * "Del Rosario, Gladwin Ferdz I." -> "Gladwin Ferdz"
+ */
+export function firstNameOf(fullName: string): string {
+  if (!fullName) return "";
+  const afterComma = fullName.includes(",")
+    ? fullName.slice(fullName.indexOf(",") + 1).trim()
+    : fullName.trim();
+  // drop a trailing single-letter middle initial like "I." or "S"
+  return afterComma.replace(/\s+[A-Za-z]\.?$/, "").trim() || afterComma;
+}
+
 export function roleLabel(role: string): string {
   const map: Record<string, string> = {
     attendee: "Attendee",

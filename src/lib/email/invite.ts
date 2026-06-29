@@ -1,6 +1,7 @@
 import "server-only";
 import path from "path";
 import nodemailer from "nodemailer";
+import { firstNameOf } from "@/lib/format";
 
 const SUBJECT = "You're invited — activate your CPE Hardhatting 2026 seat";
 
@@ -79,7 +80,7 @@ function reminderRow(cid: string, html: string, last: boolean) {
 }
 
 function inviteHtml(name: string, link: string): string {
-  const first = name.split(" ")[0] || "there";
+  const first = firstNameOf(name) || "there";
   return `<!doctype html>
 <html lang="en">
   <head>

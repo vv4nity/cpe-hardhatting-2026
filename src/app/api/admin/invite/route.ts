@@ -86,7 +86,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { test?: string };
   if (body?.test && body.test.trim()) {
     try {
-      await sendInviteEmail(body.test.trim(), "Juan Dela Cruz", `${origin}/activate`);
+      await sendInviteEmail(body.test.trim(), "Dela Cruz, Juan", `${origin}/activate`);
       return NextResponse.json({ sent: 1, failed: 0, test: true });
     } catch (e) {
       return NextResponse.json(
