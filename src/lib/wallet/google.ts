@@ -133,12 +133,19 @@ export function buildGoogleWalletSaveUrl(
   };
 
   // Google fetches these over the public internet, so only add them when the
-  // app is on a real https origin (skipped on localhost).
+  // app is on a real https origin (skipped on localhost). Use a no-space
+  // filename so the image URL isn't broken by spaces.
   if (httpsOrigin) {
     genericObject.heroImage = {
-      sourceUri: { uri: `${httpsOrigin}/main cover landscape.jpg` },
+      sourceUri: { uri: `${httpsOrigin}/wallet-hero.jpg` },
       contentDescription: {
         defaultValue: { language: "en", value: "CPE Hardhatting 2026" },
+      },
+    };
+    genericObject.logo = {
+      sourceUri: { uri: `${httpsOrigin}/wallet-logo.png` },
+      contentDescription: {
+        defaultValue: { language: "en", value: "CPE Hardhatting 2026 logo" },
       },
     };
   }
