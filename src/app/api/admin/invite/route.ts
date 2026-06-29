@@ -98,6 +98,16 @@ export async function POST(request: Request) {
 
   const admin = createAdminClient();
 
+  // don't bulk-send while activation is paused (prevents accidental sends)
+  const { data: setting } = await admin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "activation_open")
+    .maybeSingle();
+  if (setting && setting.value !== "true") {
+    return NextResponse.json({ error: "activation_paused" }, { status: 409 });
+  }
+
   const { data, error } = await admin
     .from("directory")
     .select("id, full_name, email, claimed_by, invited_at")

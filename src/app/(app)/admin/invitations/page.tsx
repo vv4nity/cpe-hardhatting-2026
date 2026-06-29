@@ -5,9 +5,11 @@ import {
   CheckCircle2,
   Download,
   Loader2,
+  Lock,
   Mail,
   Send,
   TriangleAlert,
+  Unlock,
   Users,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
@@ -39,6 +41,43 @@ export default function InvitationsPage() {
   const [result, setResult] = useState<SendResult | null>(null);
   const [testEmail, setTestEmail] = useState("");
   const [testing, setTesting] = useState(false);
+  const [activationOpen, setActivationOpen] = useState<boolean | null>(null);
+  const [toggling, setToggling] = useState(false);
+
+  const loadActivation = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/activation");
+      if (res.ok) setActivationOpen((await res.json()).open);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  async function toggleActivation() {
+    if (activationOpen === null) return;
+    setToggling(true);
+    try {
+      const res = await fetch("/api/admin/activation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ open: !activationOpen }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setActivationOpen(body.open);
+        showToast(
+          body.open ? "Activation reopened" : "Activation paused",
+          "ok",
+        );
+      } else {
+        showToast("Couldn't update activation.", "warn");
+      }
+    } catch {
+      showToast("Couldn't update activation.", "warn");
+    } finally {
+      setToggling(false);
+    }
+  }
 
   const loadStats = useCallback(async () => {
     try {
@@ -65,7 +104,8 @@ export default function InvitationsPage() {
     // on-mount data fetch; setState only fires after the awaited response
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStats();
-  }, [loadStats]);
+    loadActivation();
+  }, [loadStats, loadActivation]);
 
   async function sendInvites() {
     if (!stats || stats.pending === 0) return;
@@ -78,7 +118,9 @@ export default function InvitationsPage() {
         showToast(
           body.error === "email_not_configured"
             ? "Email isn't configured (Gmail)."
-            : "Sending failed.",
+            : body.error === "activation_paused"
+              ? "Activation is paused — reopen it before sending."
+              : "Sending failed.",
           "warn",
         );
         return;
@@ -121,6 +163,50 @@ export default function InvitationsPage() {
         title="INVITATIONS"
         subtitle="Email every not-yet-registered attendee a personal link to activate their seat."
       />
+
+      {/* activation switch */}
+      {activationOpen !== null && (
+        <div
+          className={
+            "flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 " +
+            (activationOpen
+              ? "border-brand-green/30 bg-brand-green/5"
+              : "border-brand-orange/40 bg-brand-orange/10")
+          }
+        >
+          <div className="flex items-center gap-2.5">
+            {activationOpen ? (
+              <Unlock className="size-5 text-brand-green" />
+            ) : (
+              <Lock className="size-5 text-brand-orange" />
+            )}
+            <div>
+              <div className="text-sm font-bold">
+                Activation is {activationOpen ? "OPEN" : "PAUSED"}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {activationOpen
+                  ? "Invited students can activate their accounts."
+                  : "Students see a “temporarily closed” message; sending is disabled."}
+              </div>
+            </div>
+          </div>
+          <Button
+            variant={activationOpen ? "outline" : "default"}
+            onClick={toggleActivation}
+            disabled={toggling}
+          >
+            {toggling ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : activationOpen ? (
+              <Lock />
+            ) : (
+              <Unlock />
+            )}
+            {activationOpen ? "Pause activation" : "Reopen activation"}
+          </Button>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-3">
         <CountCard
@@ -171,7 +257,7 @@ export default function InvitationsPage() {
               size="lg"
               className="mt-5"
               onClick={sendInvites}
-              disabled={sending || !stats || stats.pending === 0 || !emailReady || !!loadErr}
+              disabled={sending || !stats || stats.pending === 0 || !emailReady || !!loadErr || activationOpen === false}
             >
               {sending ? <Loader2 className="size-4 animate-spin" /> : <Send />}
               {stats && stats.pending > 0

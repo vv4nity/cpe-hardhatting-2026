@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Phase = "checking" | "invalid" | "form" | "done";
+type Phase = "checking" | "invalid" | "form" | "done" | "closed";
 
 const STATUS_MSG: Record<string, string> = {
   not_found:
@@ -47,14 +47,21 @@ export default function ActivatePage() {
   // the invite link must have established a session via /auth/confirm
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
+    (async () => {
+      // activation can be paused by organizers
+      const { data: open } = await supabase.rpc("activation_open");
+      if (open === false) {
+        setPhase("closed");
+        return;
+      }
+      const { data } = await supabase.auth.getUser();
       if (data.user) {
         setInvitedEmail(data.user.email ?? "");
         setPhase("form");
       } else {
         setPhase("invalid");
       }
-    });
+    })();
   }, []);
 
   async function submit(e: React.FormEvent) {
@@ -79,6 +86,10 @@ export default function ActivatePage() {
       });
       if (rErr) throw rErr;
       const status = (data as { status?: string })?.status;
+      if (status === "closed") {
+        setPhase("closed");
+        return;
+      }
       if (status !== "ok") {
         setError(STATUS_MSG[status ?? ""] ?? "We couldn't verify your record.");
         return;
@@ -108,6 +119,22 @@ export default function ActivatePage() {
           <Loader2 className="size-4 animate-spin" />
           Checking your invitation…
         </div>
+      </AuthSplit>
+    );
+  }
+
+  if (phase === "closed") {
+    return (
+      <AuthSplit>
+        <Heading>ACTIVATION PAUSED</Heading>
+        <p className="mt-6 text-sm text-muted-foreground">
+          Account activation is temporarily closed while we make some
+          improvements. You&apos;ll receive a fresh invitation email once it
+          reopens — no action needed for now. Thanks for your patience!
+        </p>
+        <Button asChild variant="outline" size="lg" className="mt-5 w-full">
+          <Link href="/">Back to home</Link>
+        </Button>
       </AuthSplit>
     );
   }
