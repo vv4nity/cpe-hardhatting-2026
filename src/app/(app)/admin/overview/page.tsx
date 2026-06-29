@@ -108,7 +108,7 @@ export default function OverviewPage() {
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber/15 px-3 py-1 text-xs font-bold text-brand-ink">
                 <span className="size-1.5 rounded-full bg-brand-orange" />
-                Peak {peak.label} · {peak.value}
+                {peak.value > 0 ? `Peak ${peak.label} · ${peak.value}` : "No check-ins yet"}
               </span>
             </div>
             <CheckinChart chart={chart} />

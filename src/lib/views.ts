@@ -29,7 +29,8 @@ export interface ChartPoint {
   ratio: number;
 }
 
-const CHART_HOURS = [7, 8, 9, 10, 11, 12];
+const EVENT_CALL_HOUR = 12; // 12:00 PM call time
+const MIN_SPAN = 6; // keep the chart readable with at least this many hours
 
 export function computeCheckinChart(data: Dataset): {
   points: ChartPoint[];
@@ -37,6 +38,26 @@ export function computeCheckinChart(data: Dataset): {
   areaPath: string;
   linePath: string;
 } {
+  // build the hour window from the REAL check-in times; before the event
+  // (no check-ins yet) fall back to a window around the call time
+  const hours = data.attendees
+    .filter((a) => a.checkIn != null)
+    .map((a) => Math.floor((a.checkIn as number) / 60));
+  let start: number;
+  let end: number;
+  if (hours.length) {
+    start = Math.min(...hours);
+    end = Math.max(...hours);
+  } else {
+    start = EVENT_CALL_HOUR - 1; // 11 AM
+    end = EVENT_CALL_HOUR; // noon
+  }
+  if (end - start < MIN_SPAN - 1) end = start + MIN_SPAN - 1;
+  start = Math.max(0, start);
+  end = Math.min(23, end);
+  const CHART_HOURS: number[] = [];
+  for (let h = start; h <= end; h++) CHART_HOURS.push(h);
+
   const buckets: Record<number, number> = {};
   CHART_HOURS.forEach((h) => (buckets[h] = 0));
   data.attendees.forEach((a) => {
