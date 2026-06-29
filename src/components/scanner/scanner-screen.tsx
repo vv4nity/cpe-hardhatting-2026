@@ -7,47 +7,66 @@ import {
   CameraOff,
   LogOut,
   ScanLine,
-  Sparkles,
   Volume2,
   VolumeX,
+  Wifi,
   WifiOff,
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { signOutEverywhere } from "@/lib/auth-actions";
+import {
+  checkInSeat,
+  flushQueue,
+  queueCount,
+  seatFromScan,
+} from "@/lib/checkin";
+import { refreshStaffData } from "@/lib/supabase/refresh";
+import { initialsOf } from "@/lib/format";
+import { STATUS } from "@/lib/status";
+import type { Attendee, ScanResult } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { ScanResultDialog } from "./scan-result-dialog";
 
 const CAMERA_ID = "hhc-camera";
 
+const GREEN = STATUS.present.c;
+const RED = STATUS["no-show"].c;
+const AMBER = "#d99514";
+
 export function ScannerScreen() {
-  const user = useApp((s) => s.user)!;
   const data = useApp((s) => s.data);
   const router = useRouter();
 
   const soundOn = useApp((s) => s.soundOn);
-  const offlineOn = useApp((s) => s.offlineOn);
   const toggleSound = useApp((s) => s.toggleSound);
-  const toggleOffline = useApp((s) => s.toggleOffline);
   const manualVal = useApp((s) => s.manualVal);
   const setManualVal = useApp((s) => s.setManualVal);
-  const manualScan = useApp((s) => s.manualScan);
-  const simulateScan = useApp((s) => s.simulateScan);
-  const processScan = useApp((s) => s.processScan);
   const scanResult = useApp((s) => s.scanResult);
+  const applyScanResult = useApp((s) => s.applyScanResult);
+  const markPresentLocal = useApp((s) => s.markPresentLocal);
+  const online = useApp((s) => s.online);
+  const setOnline = useApp((s) => s.setOnline);
+  const pending = useApp((s) => s.pendingCount);
+  const setPendingCount = useApp((s) => s.setPendingCount);
   const showToast = useApp((s) => s.showToast);
   const stats = useApp((s) => s.scanStats);
 
   const [scanning, setScanning] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const html5Ref = useRef<any>(null);
-  const scanResultRef = useRef(scanResult);
-  scanResultRef.current = scanResult;
+  const dataRef = useRef(data);
+  const resultRef = useRef(scanResult);
+  const busyRef = useRef(false);
   const soundRef = useRef(soundOn);
-  soundRef.current = soundOn;
+  // keep the refs (read inside camera callbacks) in sync after each render
+  useEffect(() => {
+    dataRef.current = data;
+    resultRef.current = scanResult;
+    soundRef.current = soundOn;
+  });
 
   function beep(ok: boolean) {
     if (!soundRef.current) return;
@@ -76,16 +95,126 @@ export function ScannerScreen() {
     }
   }
 
-  function onDecode(text: string) {
-    if (scanResultRef.current) return; // wait until current result dismissed
-    let att = null;
-    if (typeof text === "string" && text.startsWith("HHC2026:")) {
-      const id = text.split(":")[1];
-      att = data.attMap[id] || null;
-    }
-    beep(!!att);
-    processScan(att);
+  function details(att: Attendee) {
+    return {
+      id: att.id,
+      email: att.email,
+      initials: initialsOf(att.name),
+    };
   }
+
+  function successResult(att: Attendee, queued: boolean): ScanResult {
+    return {
+      tone: GREEN,
+      icon: "check",
+      title: queued ? "CHECKED IN · OFFLINE" : "CHECKED IN",
+      name: att.name,
+      seat: att.seat,
+      block: att.block,
+      ...details(att),
+      status: "present",
+      checkIn: null,
+      sub: queued
+        ? "No connection — saved and will sync automatically."
+        : "Welcome! Attendance recorded.",
+      outcome: "success",
+    };
+  }
+  function dupResult(att: Attendee): ScanResult {
+    return {
+      tone: AMBER,
+      icon: "alert",
+      title: "ALREADY IN",
+      name: att.name,
+      seat: att.seat,
+      block: att.block,
+      ...details(att),
+      status: "present",
+      checkIn: att.checkIn,
+      sub: "This attendee has already been checked in.",
+      outcome: "duplicate",
+    };
+  }
+  function invalidResult(sub: string): ScanResult {
+    return {
+      tone: RED,
+      icon: "x",
+      title: "INVALID CODE",
+      name: "Unrecognized pass",
+      seat: "—",
+      block: "—",
+      sub,
+      outcome: "invalid",
+    };
+  }
+
+  async function handleScan(raw: string) {
+    if (resultRef.current || busyRef.current) return;
+    const seat = seatFromScan(raw);
+    const att = seat
+      ? dataRef.current.attendees.find(
+          (a) => a.seat.toUpperCase() === seat || a.id.toUpperCase() === seat,
+        )
+      : null;
+    if (!att) {
+      beep(false);
+      applyScanResult(invalidResult("This code isn't a valid attendee pass."));
+      return;
+    }
+    if (att.status === "present") {
+      beep(false);
+      applyScanResult(dupResult(att));
+      return;
+    }
+    busyRef.current = true;
+    try {
+      const res = await checkInSeat(att.seat);
+      if (res.outcome === "success" || res.outcome === "queued") {
+        beep(true);
+        markPresentLocal(att.seat); // optimistic; admin updates via realtime
+        applyScanResult(successResult(att, res.outcome === "queued"));
+      } else if (res.outcome === "duplicate") {
+        beep(false);
+        markPresentLocal(att.seat);
+        applyScanResult(dupResult(att));
+      } else {
+        beep(false);
+        applyScanResult(
+          invalidResult(
+            res.outcome === "forbidden"
+              ? "This account isn't allowed to scan."
+              : "This pass isn't valid.",
+          ),
+        );
+      }
+      setPendingCount(queueCount());
+    } finally {
+      busyRef.current = false;
+    }
+  }
+
+  // connectivity + offline queue sync
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    setPendingCount(queueCount());
+    const goOnline = async () => {
+      setOnline(true);
+      const n = await flushQueue();
+      setPendingCount(queueCount());
+      if (n > 0) {
+        refreshStaffData();
+        showToast(`Synced ${n} offline check-in${n === 1 ? "" : "s"}`, "ok");
+      }
+    };
+    const goOffline = () => setOnline(false);
+    window.addEventListener("online", goOnline);
+    window.addEventListener("offline", goOffline);
+    return () => {
+      window.removeEventListener("online", goOnline);
+      window.removeEventListener("offline", goOffline);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function startCamera() {
     try {
@@ -95,16 +224,14 @@ export function ScannerScreen() {
       html5Ref.current = instance;
       await instance.start(
         { facingMode: "environment" },
-        // no qrbox: scan the full frame and skip the library's own overlay,
-        // so only our custom amber reticle is shown
         { fps: 10 },
-        (txt) => onDecode(txt),
+        (txt) => handleScan(txt),
         () => {},
       );
       setScanning(true);
     } catch {
       html5Ref.current = null;
-      showToast("Camera unavailable — use Simulate Scan", "warn");
+      showToast("Camera unavailable — use manual entry", "warn");
     }
   }
 
@@ -126,7 +253,6 @@ export function ScannerScreen() {
     return () => {
       stopCamera();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function signOut() {
@@ -136,52 +262,74 @@ export function ScannerScreen() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-brand-ink text-brand-cream">
+    <div className="flex h-dvh flex-col overflow-hidden bg-brand-ink text-brand-cream">
       {/* header */}
-      <header className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
-        <div className="flex items-center gap-3">
-          <Logo className="size-9" />
+      <header className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-2.5">
+        <div className="flex items-center gap-2.5">
+          <Logo className="size-8" />
           <div className="leading-tight">
-            <div className="font-display text-lg tracking-wide">SCANNER STATION</div>
-            <div className="text-[11px] font-medium uppercase tracking-wide text-brand-cream/60">
-              {user.scanner || "Gate A · Reyes"}
-            </div>
+            <div className="font-display text-base tracking-wide">SCANNER</div>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide",
+                online ? "text-brand-green" : "text-brand-amber",
+              )}
+            >
+              {online ? (
+                <Wifi className="size-3" />
+              ) : (
+                <WifiOff className="size-3" />
+              )}
+              {online ? "Online" : "Offline"}
+              {pending > 0 && ` · ${pending} queued`}
+            </span>
           </div>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={signOut}
-          className="text-brand-cream hover:bg-white/10"
-        >
-          <LogOut /> Sign out
-        </Button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={toggleSound}
+            aria-label="Toggle scan sound"
+            className="grid size-9 place-items-center rounded-xl text-brand-cream/80 hover:bg-white/10"
+          >
+            {soundOn ? (
+              <Volume2 className="size-5" />
+            ) : (
+              <VolumeX className="size-5" />
+            )}
+          </button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={signOut}
+            className="text-brand-cream hover:bg-white/10"
+          >
+            <LogOut /> Sign out
+          </Button>
+        </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-5 px-4 py-6">
-        {/* viewport */}
-        <div className="relative aspect-square w-full overflow-hidden rounded-3xl border border-white/10 bg-black">
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-3 overflow-hidden px-4 py-3">
+        {/* viewport — fills the available space */}
+        <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-white/10 bg-black">
           <div
             id={CAMERA_ID}
             className="absolute inset-0 [&_video]:size-full [&_video]:object-cover"
           />
 
-          {/* idle overlay */}
           {!scanning && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/45 text-center backdrop-blur-[1px]">
               <span className="grid size-14 place-items-center rounded-2xl bg-white/5 ring-1 ring-white/10">
                 <ScanLine className="size-7 text-brand-amber" />
               </span>
               <p className="max-w-[16rem] px-6 text-sm text-brand-cream/70">
-                Camera is off. Start the camera or simulate a scan to record
-                attendance.
+                Start the camera and point it at an attendee&apos;s QR pass.
               </p>
             </div>
           )}
 
           {/* reticle */}
           <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <div className="relative aspect-square w-2/3 max-w-[15rem] overflow-hidden rounded-xl">
+            <div className="relative aspect-square w-1/2 max-w-[13rem] overflow-hidden rounded-xl">
               {[
                 "left-0 top-0 rounded-tl-xl border-l-[3px] border-t-[3px]",
                 "right-0 top-0 rounded-tr-xl border-r-[3px] border-t-[3px]",
@@ -191,7 +339,7 @@ export function ScannerScreen() {
                 <span
                   key={pos}
                   className={cn(
-                    "absolute size-8 transition-colors",
+                    "absolute size-7 transition-colors",
                     pos,
                     scanning
                       ? "animate-reticle border-brand-amber"
@@ -199,8 +347,6 @@ export function ScannerScreen() {
                   )}
                 />
               ))}
-
-              {/* laser sweep */}
               {scanning && (
                 <>
                   <div className="absolute inset-x-2 h-10 -translate-y-1/2 animate-scan rounded-full bg-brand-amber/15 blur-md" />
@@ -209,99 +355,62 @@ export function ScannerScreen() {
               )}
             </div>
           </div>
+
+          {/* offline banner */}
+          {!online && (
+            <div className="absolute inset-x-0 top-0 bg-brand-amber px-3 py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-brand-ink">
+              Offline — scans are saved and sync automatically
+            </div>
+          )}
         </div>
 
-        <Button
-          size="lg"
-          variant={scanning ? "destructive" : "success"}
-          onClick={() => (scanning ? stopCamera() : startCamera())}
-        >
-          {scanning ? <CameraOff /> : <Camera />}
-          {scanning ? "Stop camera" : "Start camera"}
-        </Button>
-
-        <Button
-          variant="accent"
-          size="lg"
-          onClick={simulateScan}
-          className="-mt-2"
-        >
-          <Sparkles />
-          Simulate scan
-        </Button>
-
-        {/* manual */}
-        <form
-          className="flex gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            manualScan();
-          }}
-        >
-          <Input
-            value={manualVal}
-            onChange={(e) => setManualVal(e.target.value)}
-            placeholder="Manual: seat or ID (e.g. C12)"
-            className="border-white/15 bg-white/5 text-brand-cream placeholder:text-brand-cream/40"
-          />
-          <Button type="submit" variant="outline" className="shrink-0 border-white/15 bg-white/5 text-brand-cream hover:bg-white/10">
-            Check in
+        {/* controls */}
+        <div className="shrink-0 space-y-2.5">
+          <Button
+            size="lg"
+            variant={scanning ? "destructive" : "success"}
+            className="w-full"
+            onClick={() => (scanning ? stopCamera() : startCamera())}
+          >
+            {scanning ? <CameraOff /> : <Camera />}
+            {scanning ? "Stop camera" : "Start camera"}
           </Button>
-        </form>
 
-        {/* toggles */}
-        <div className="grid grid-cols-2 gap-3">
-          <Toggle
-            on={offlineOn}
-            onToggle={toggleOffline}
-            icon={<WifiOff className="size-4" />}
-            label="Offline mode"
-          />
-          <Toggle
-            on={soundOn}
-            onToggle={toggleSound}
-            icon={
-              soundOn ? (
-                <Volume2 className="size-4" />
-              ) : (
-                <VolumeX className="size-4" />
-              )
-            }
-            label="Scan sound"
-          />
-        </div>
+          <form
+            className="flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const v = manualVal.trim();
+              if (!v) return;
+              setManualVal("");
+              handleScan(v);
+            }}
+          >
+            <Input
+              value={manualVal}
+              onChange={(e) => setManualVal(e.target.value)}
+              placeholder="Manual seat (e.g. C12)"
+              className="border-white/15 bg-white/5 text-brand-cream placeholder:text-brand-cream/40"
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              className="shrink-0 border-white/15 bg-white/5 text-brand-cream hover:bg-white/10"
+            >
+              Check in
+            </Button>
+          </form>
 
-        {/* stats */}
-        <div className="mt-auto grid grid-cols-3 gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
-          <Stat value={stats.total} label="Scanned" />
-          <Stat value={stats.success} label="Checked in" tone="text-brand-amber" />
-          <Stat value={stats.dup} label="Duplicates" tone="text-brand-orange" />
+          {/* stats */}
+          <div className="grid grid-cols-3 gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-2.5 text-center">
+            <Stat value={stats.total} label="Scanned" />
+            <Stat value={stats.success} label="Checked in" tone="text-brand-amber" />
+            <Stat value={stats.dup} label="Duplicates" tone="text-brand-orange" />
+          </div>
         </div>
       </main>
 
       <ScanResultDialog />
-    </div>
-  );
-}
-
-function Toggle({
-  on,
-  onToggle,
-  icon,
-  label,
-}: {
-  on: boolean;
-  onToggle: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-3.5 py-3">
-      <span className="flex items-center gap-2 text-sm font-medium">
-        {icon}
-        {label}
-      </span>
-      <Switch checked={on} onCheckedChange={onToggle} />
     </div>
   );
 }
@@ -317,10 +426,10 @@ function Stat({
 }) {
   return (
     <div>
-      <div className={cn("font-display text-3xl leading-none", tone)}>
+      <div className={cn("font-display text-2xl leading-none", tone)}>
         {value}
       </div>
-      <div className="mt-1 text-[11px] font-bold uppercase tracking-wide text-brand-cream/60">
+      <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-cream/60">
         {label}
       </div>
     </div>

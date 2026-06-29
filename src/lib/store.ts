@@ -49,6 +49,10 @@ interface AppState {
   manualVal: string;
   scanResult: ScanResult | null;
   scanStats: ScanStats;
+  /** real connectivity for the scanner's offline queue */
+  online: boolean;
+  /** number of scans waiting to sync to the server */
+  pendingCount: number;
 
   // import
   importActive: boolean;
@@ -93,6 +97,11 @@ interface AppState {
   simulateScan: () => void;
   manualScan: () => void;
   scanNext: () => void;
+  // real scanning
+  setOnline: (v: boolean) => void;
+  setPendingCount: (n: number) => void;
+  applyScanResult: (res: ScanResult) => void;
+  markPresentLocal: (seat: string, when?: number) => void;
 
   runImport: () => void;
   exportData: () => void;
@@ -139,6 +148,8 @@ export const useApp = create<AppState>()(
       manualVal: "",
       scanResult: null,
       scanStats: { total: 0, success: 0, dup: 0 },
+      online: true,
+      pendingCount: 0,
 
       importActive: false,
       importStage: "",
@@ -320,6 +331,34 @@ export const useApp = create<AppState>()(
       },
 
       scanNext: () => set({ scanResult: null }),
+
+      setOnline: (v) => set({ online: v }),
+      setPendingCount: (n) => set({ pendingCount: n }),
+      applyScanResult: (res) =>
+        set((s) => ({
+          scanResult: res,
+          scanStats: {
+            total: s.scanStats.total + 1,
+            success: s.scanStats.success + (res.outcome === "success" ? 1 : 0),
+            dup: s.scanStats.dup + (res.outcome === "duplicate" ? 1 : 0),
+          },
+        })),
+      markPresentLocal: (seat, when) =>
+        set((s) => {
+          const key = seat.toUpperCase();
+          const now =
+            when ?? new Date().getHours() * 60 + new Date().getMinutes();
+          const attendees = s.data.attendees.map((a) =>
+            a.seat.toUpperCase() === key
+              ? { ...a, status: "present" as SeatStatus, checkIn: now }
+              : a,
+          );
+          const attMap = Object.fromEntries(attendees.map((a) => [a.id, a]));
+          return {
+            data: { ...s.data, attendees, attMap },
+            dataVersion: s.dataVersion + 1,
+          };
+        }),
 
       runImport: () => {
         set({

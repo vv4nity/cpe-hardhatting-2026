@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ChevronRight, Download, Map, RefreshCw, Send } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { refreshStaffData } from "@/lib/supabase/refresh";
 import {
   computeActivity,
   computeBlockTable,
@@ -19,10 +20,18 @@ export default function OverviewPage() {
   const data = useApp((s) => s.data);
   useApp((s) => s.dataVersion);
   const scanStats = useApp((s) => s.scanStats);
-  const refresh = useApp((s) => s.refresh);
   const exportData = useApp((s) => s.exportData);
+  const showToast = useApp((s) => s.showToast);
 
   const [openSection, setOpenSection] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    setRefreshing(true);
+    await refreshStaffData();
+    setRefreshing(false);
+    showToast("Attendance refreshed", "ok");
+  }
 
   const m = computeMetrics(data);
   const chart = computeCheckinChart(data);
@@ -45,8 +54,8 @@ export default function OverviewPage() {
         subtitle="Real-time attendance metrics for Hardhatting 2026."
         actions={
           <>
-            <Button variant="outline" onClick={refresh}>
-              <RefreshCw /> Refresh
+            <Button variant="outline" onClick={refresh} disabled={refreshing}>
+              <RefreshCw className={refreshing ? "animate-spin" : ""} /> Refresh
             </Button>
             <Button variant="outline" onClick={exportData}>
               <Download /> Export

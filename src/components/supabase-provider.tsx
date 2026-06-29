@@ -11,6 +11,7 @@ import {
   type RawSeatRow,
 } from "@/lib/data/source";
 import { initialsOf } from "@/lib/format";
+import { refreshStaffData } from "@/lib/supabase/refresh";
 import type { Role, SeatStatus, SessionUser } from "@/lib/types";
 
 /**
@@ -21,6 +22,9 @@ import type { Role, SeatStatus, SessionUser } from "@/lib/types";
  */
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const realRef = useRef(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const channelRef = useRef<any>(null);
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -99,6 +103,22 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       };
       realRef.current = true;
       useApp.setState({ user, data: buildDatasetFromRows(rows) });
+
+      // staff dashboards update live as check-ins land
+      if (isStaff && !channelRef.current) {
+        channelRef.current = supabase
+          .channel("directory-attendance")
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "directory" },
+            () => {
+              // debounce so a burst of check-ins triggers one refetch
+              if (refreshTimer.current) clearTimeout(refreshTimer.current);
+              refreshTimer.current = setTimeout(() => refreshStaffData(), 600);
+            },
+          )
+          .subscribe();
+      }
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -122,6 +142,11 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
     return () => {
       active = false;
       sub.subscription.unsubscribe();
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, []);
 
