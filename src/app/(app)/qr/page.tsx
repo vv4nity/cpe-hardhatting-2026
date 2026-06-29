@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, passPayload } from "@/components/qr-code";
-import { AppleWalletIcon, GoogleWalletIcon } from "@/components/brand/wallet-icons";
+import { GoogleWalletIcon } from "@/components/brand/wallet-icons";
 
 export default function QrPage() {
   const user = useApp((s) => s.user)!;
@@ -39,20 +39,6 @@ export default function QrPage() {
     try {
       await downloadPassPng(passInfo());
       showToast("Pass saved as PNG", "ok");
-    } catch {
-      showToast("Couldn't save the pass image", "err");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  // Apple Wallet isn't wired (needs a paid Apple Developer cert) — save the
-  // high-quality ticket image so iPhone users still have their pass.
-  async function applePass() {
-    setSaving(true);
-    try {
-      await downloadPassPng(passInfo());
-      showToast("Saved your pass image", "ok");
     } catch {
       showToast("Couldn't save the pass image", "err");
     } finally {
@@ -175,17 +161,9 @@ export default function QrPage() {
             <GoogleWalletIcon className="size-5" />
             Add to Google Wallet
           </button>
-          <button
-            onClick={applePass}
-            disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-colors hover:bg-secondary/60 active:scale-[0.98] disabled:opacity-60"
-          >
-            <AppleWalletIcon className="size-5" />
-            Save for Apple Wallet (image)
-          </button>
           <p className="text-center text-xs text-muted-foreground">
-            Google Wallet adds a real pass on Android. On iPhone, save the pass
-            image and present the QR at the gate.
+            Google Wallet adds a real pass on Android. On iPhone, tap “Save as
+            PNG” and present the QR at the gate.
           </p>
         </div>
       </div>
