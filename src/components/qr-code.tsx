@@ -29,12 +29,17 @@ export function QrCode({
     }).catch(() => {});
   }, [value]);
 
+  // The square wrapper owns the aspect ratio; the canvas fills it with
+  // object-contain so the QR is always drawn square (never stretched/squeezed),
+  // regardless of how the browser sizes a replaced <canvas> element.
   return (
-    <canvas
-      ref={ref}
-      aria-label="Attendance QR pass"
-      className={cn("block aspect-square w-full max-w-full", className)}
-    />
+    <div className={cn("aspect-square w-full max-w-full", className)}>
+      <canvas
+        ref={ref}
+        aria-label="Attendance QR pass"
+        className="block size-full object-contain"
+      />
+    </div>
   );
 }
 
