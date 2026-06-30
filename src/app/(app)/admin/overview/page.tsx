@@ -469,7 +469,11 @@ function CheckinChart({
                     r="2"
                     fill="#FD8602"
                     opacity={p.value > 0 ? 0.8 : 0}
-                  />
+                    role="img"
+                    aria-label={`${p.label} · ${p.value} check-in${p.value === 1 ? "" : "s"}`}
+                  >
+                    <title>{`${p.label} · ${p.value} check-in${p.value === 1 ? "" : "s"}`}</title>
+                  </circle>
                 );
               })}
             </>
