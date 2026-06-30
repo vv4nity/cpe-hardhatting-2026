@@ -443,17 +443,21 @@ export default function InvitationsPage() {
       </div>
 
       {/* email-change requests (from the public "didn't get my invite" form) */}
-      {requests.length > 0 && (
-        <Card className="border-brand-orange/40">
-          <CardContent className="p-5">
-            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-orange">
-              <Mail className="size-4" />
-              Email change requests · {requests.length}
-            </h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Students who said they didn&apos;t get their invite. Approve to
-              update their email and send a fresh invite.
-            </p>
+      <Card className={requests.length > 0 ? "border-brand-orange/40" : ""}>
+        <CardContent className="p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-orange">
+            <Mail className="size-4" />
+            Email change requests · {requests.length}
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Students who said they didn&apos;t get their invite. Approve to
+            update their email and send a fresh invite.
+          </p>
+          {requests.length === 0 ? (
+            <div className="mt-3 rounded-xl border border-dashed border-border bg-secondary/30 py-6 text-center text-sm text-muted-foreground">
+              No pending requests right now.
+            </div>
+          ) : (
             <div className="mt-3 space-y-2">
               {requests.map((r) => (
                 <div
@@ -500,9 +504,9 @@ export default function InvitationsPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-      )}
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         {/* send */}
