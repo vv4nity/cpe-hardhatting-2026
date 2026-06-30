@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
@@ -113,6 +114,14 @@ export default function SignInPage() {
                     )}
                   </button>
                 </div>
+                <div className="text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-xs font-semibold text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
               {error && (
                 <p className="text-sm font-medium text-brand-red">{error}</p>
@@ -138,6 +147,15 @@ export default function SignInPage() {
       <p className="mt-6 text-center text-xs text-muted-foreground">
         Invited but haven&apos;t set up your account? Open the activation link in
         your email.
+      </p>
+      <p className="mt-2 text-center text-xs text-muted-foreground">
+        Didn&apos;t get your invitation?{" "}
+        <Link
+          href="/no-invite"
+          className="font-semibold text-foreground underline-offset-2 hover:underline"
+        >
+          Fix your email
+        </Link>
       </p>
     </AuthSplit>
   );

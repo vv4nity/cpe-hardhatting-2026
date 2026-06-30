@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Check,
   CheckCircle2,
   Download,
   Loader2,
@@ -51,6 +52,15 @@ interface SendResult {
   status: "sent" | "failed";
   reason?: string;
 }
+interface EmailRequest {
+  id: string;
+  name: string;
+  block: string;
+  seat: string;
+  currentEmail: string;
+  requestedEmail: string;
+  registered: boolean;
+}
 
 const BATCH = 6; // small enough that each request stays well under the 60s function limit
 
@@ -65,6 +75,9 @@ export default function InvitationsPage() {
 
   const [activationOpen, setActivationOpen] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
+
+  const [requests, setRequests] = useState<EmailRequest[]>([]);
+  const [reqBusy, setReqBusy] = useState<string | null>(null);
 
   // sending
   const [sending, setSending] = useState(false);
@@ -128,12 +141,51 @@ export default function InvitationsPage() {
     }
   }, []);
 
+  const loadRequests = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/email-requests");
+      if (res.ok) setRequests((await res.json()).requests ?? []);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  async function handleRequest(id: string, action: "approve" | "reject") {
+    setReqBusy(id);
+    try {
+      const res = await fetch("/api/admin/email-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast("Couldn't update the request.", "warn");
+        return;
+      }
+      showToast(
+        action === "approve"
+          ? b.sent
+            ? "Approved · fresh invite sent"
+            : "Approved (email updated)"
+          : "Request rejected",
+        "ok",
+      );
+      loadRequests();
+      loadStats();
+      loadRecipients();
+    } finally {
+      setReqBusy(null);
+    }
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     loadStats();
     loadRecipients();
     loadActivation();
-  }, [loadStats, loadRecipients, loadActivation]);
+    loadRequests();
+  }, [loadStats, loadRecipients, loadActivation, loadRequests]);
 
   async function toggleActivation() {
     if (activationOpen === null) return;
@@ -389,6 +441,68 @@ export default function InvitationsPage() {
           }}
         />
       </div>
+
+      {/* email-change requests (from the public "didn't get my invite" form) */}
+      {requests.length > 0 && (
+        <Card className="border-brand-orange/40">
+          <CardContent className="p-5">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-orange">
+              <Mail className="size-4" />
+              Email change requests · {requests.length}
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Students who said they didn&apos;t get their invite. Approve to
+              update their email and send a fresh invite.
+            </p>
+            <div className="mt-3 space-y-2">
+              {requests.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-secondary/30 p-3"
+                >
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold">
+                      {r.name}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">
+                        · {r.block} {r.seat}
+                      </span>
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      <span className="line-through">{r.currentEmail || "—"}</span>{" "}
+                      →{" "}
+                      <span className="font-medium text-foreground">
+                        {r.requestedEmail}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleRequest(r.id, "approve")}
+                      disabled={reqBusy === r.id}
+                    >
+                      {reqBusy === r.id ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Check className="size-3.5" />
+                      )}
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleRequest(r.id, "reject")}
+                      disabled={reqBusy === r.id}
+                    >
+                      Reject
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
         {/* send */}
