@@ -432,7 +432,7 @@ function CheckinChart({
           <defs>
             <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#FD8602" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#10B981" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#2E7D52" stopOpacity="0.3" />
             </linearGradient>
           </defs>
           {hasData ? (
@@ -476,8 +476,15 @@ function CheckinChart({
           ) : (
             <g>
               <rect x="6" y="18" width="88" height="62" fill="transparent" />
-              <text x="50" y="50" textAnchor="middle" fill="#9CA3AF" style={{ fontSize: "3.8px" }}>
+              <g transform="translate(50,34)">
+                <circle cx="0" cy="0" r="9" fill="#FFBF00" opacity="0.22" />
+                <rect x="-2" y="-2" width="4" height="4" fill="#FD8602" rx="0.5" />
+              </g>
+              <text x="50" y="64" textAnchor="middle" fill="#6B6B6B" style={{ fontSize: "3.8px", fontWeight: 600 }}>
                 No check-ins yet
+              </text>
+              <text x="50" y="72" textAnchor="middle" fill="#A8A29E" style={{ fontSize: "3px" }}>
+                Activity will appear here as attendees begin checking in.
               </text>
             </g>
           )}
