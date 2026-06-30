@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Armchair,
+  Download,
   LayoutDashboard,
   Map,
   QrCode,
@@ -44,6 +45,7 @@ export function navTabsFor(role: Role): NavTab[] {
         short: "Expert",
         icon: ShieldCheck,
       },
+      { href: "/admin/export", label: "Export", short: "Export", icon: Download },
     ];
   }
   if (role === "president") {

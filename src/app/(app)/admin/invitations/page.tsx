@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Check,
   CheckCircle2,
-  Download,
   Loader2,
   Lock,
   Mail,
@@ -64,8 +63,9 @@ interface EmailRequest {
   registered: boolean;
 }
 
+const BATCH = 6;
+
 export default function InvitationsPage() {
-  const exportData = useApp((s) => s.exportData);
   const showToast = useApp((s) => s.showToast);
 
   const [stats, setStats] = useState<Stats | null>(null);
@@ -898,20 +898,6 @@ export default function InvitationsPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="flex h-full flex-col p-6">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                Export attendance
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Download the current attendance snapshot as a CSV.
-              </p>
-              <Button className="mt-auto" size="lg" onClick={exportData}>
-                <Download />
-                Export attendance CSV
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
