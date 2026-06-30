@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { PageHeader } from "@/components/app/page-header";
+import { ExpertAttendanceCard } from "@/components/admin/expert-attendance-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -105,6 +106,7 @@ export default function InvitationsPage() {
 
   const [reminderLabel, setReminderLabel] = useState<string | null>(null);
   const [reminderSentLabel, setReminderSentLabel] = useState<string | null>(null);
+  const [reminderScheduled, setReminderScheduled] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
 
   const loadStats = useCallback(async () => {
@@ -162,6 +164,7 @@ export default function InvitationsPage() {
         const b = await res.json();
         setReminderLabel(b.scheduledLabel ?? null);
         setReminderSentLabel(b.sentLabel ?? null);
+        setReminderScheduled(Boolean(b.scheduledLabel));
       }
     } catch {
       /* ignore */
@@ -233,7 +236,9 @@ export default function InvitationsPage() {
   }, [loadStats, loadRecipients, loadActivation, loadRequests, loadReminder]);
 
   async function scheduleReminder() {
+    if (reminderScheduled) return;
     setReminderBusy(true);
+    setReminderScheduled(true);
     try {
       const res = await fetch("/api/admin/activation-reminder", {
         method: "POST",
@@ -242,12 +247,17 @@ export default function InvitationsPage() {
       });
       const b = await res.json().catch(() => ({}));
       if (!res.ok) {
+        setReminderScheduled(false);
         showToast("Couldn't schedule the reminder.", "warn");
         return;
       }
       setReminderLabel(b.scheduledLabel ?? null);
       setReminderSentLabel(null);
+      setReminderScheduled(Boolean(b.scheduledLabel));
       showToast(`Reminder scheduled for ${b.scheduledLabel}`, "ok");
+    } catch {
+      setReminderScheduled(false);
+      showToast("Couldn't schedule the reminder.", "warn");
     } finally {
       setReminderBusy(false);
     }
@@ -783,7 +793,9 @@ export default function InvitationsPage() {
         </Card>
 
         {/* right column: reminder + fix email + export */}
-        <div className="space-y-5">
+        <div className="space-y-4">
+          <ExpertAttendanceCard />
+
           <Card>
             <CardContent className="p-6">
               <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
@@ -800,9 +812,19 @@ export default function InvitationsPage() {
                 <div className="mt-1">Scheduled: {reminderLabel ?? "not yet"}</div>
                 <div className="mt-1">Sent: {reminderSentLabel ?? "not yet"}</div>
               </div>
-              <Button className="mt-4 w-full" onClick={scheduleReminder} disabled={reminderBusy}>
-                {reminderBusy ? <Loader2 className="size-4 animate-spin" /> : <Mail />}
-                Schedule tomorrow&apos;s reminder
+              <Button
+                className="mt-4 w-full"
+                onClick={scheduleReminder}
+                disabled={reminderBusy || reminderScheduled}
+              >
+                {reminderBusy ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : reminderScheduled ? (
+                  <CheckCircle2 className="size-4" />
+                ) : (
+                  <Mail />
+                )}
+                {reminderBusy ? "Scheduling…" : reminderScheduled ? "Scheduled" : "Schedule tomorrow&apos;s reminder"}
               </Button>
               <p className="mt-2 text-xs text-muted-foreground">
                 Uses the same activation-link flow as the invite emails, then sends automatically when the cron job runs.
