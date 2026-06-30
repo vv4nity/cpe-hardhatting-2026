@@ -1,22 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" shape-rendering="crispEdges">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
   <rect width="256" height="256" fill="#1a1712"/>
-  <g transform="translate(48,48) scale(0.73)">
-    <g fill="#FFBF00">
-      <path fill-rule="evenodd" d="M0 0h70v70H0Z M14 14v42h42V14Z"/>
-      <rect x="28" y="28" width="28" height="28"/>
-    </g>
-    <g fill="#FD8602">
-      <path fill-rule="evenodd" d="M150 0h70v70h-70Z M164 14v42h42V14Z"/>
-      <rect x="178" y="28" width="28" height="28"/>
-      <path fill-rule="evenodd" d="M0 150h70v70H0Z M14 164v42h42v-42Z"/>
-      <rect x="28" y="178" width="28" height="28"/>
-    </g>
-    <g fill="#F9EEDA">
-      <rect x="120" y="120" width="24" height="24"/>
-      <rect x="160" y="120" width="24" height="24"/>
-      <rect x="196" y="156" width="24" height="24"/>
-      <rect x="120" y="192" width="24" height="24"/>
-      <rect x="160" y="192" width="24" height="24"/>
-    </g>
+  <!-- brim (sits behind the dome; wings + front lip stay visible) -->
+  <ellipse cx="128" cy="160" rx="100" ry="20" fill="#FD8602"/>
+  <!-- dome -->
+  <path d="M54 160a74 74 0 0 1 148 0Z" fill="#FFBF00"/>
+  <!-- side ribs -->
+  <g fill="none" stroke="#FD8602" stroke-width="9" stroke-linecap="round">
+    <path d="M116 94Q94 119 92 156"/>
+    <path d="M140 94Q162 119 164 156"/>
   </g>
+  <!-- center ridge -->
+  <path d="M113 95Q128 87 143 95L143 160 113 160Z" fill="#FD8602"/>
+  <!-- shine -->
+  <path d="M78 148a53 53 0 0 1 28 -49" fill="none" stroke="#F9EEDA" stroke-width="7" stroke-linecap="round" opacity=".35"/>
 </svg>
