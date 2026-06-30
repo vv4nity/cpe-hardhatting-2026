@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, EyeOff, Loader2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { SECTIONS } from "@/lib/sections";
-import { homeFor } from "@/lib/nav";
-import type { Role } from "@/lib/types";
 import { AuthSplit } from "@/components/auth/auth-split";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +28,6 @@ const STATUS_MSG: Record<string, string> = {
 };
 
 export default function ActivatePage() {
-  const router = useRouter();
   const [phase, setPhase] = useState<Phase>("checking");
   const [invitedEmail, setInvitedEmail] = useState("");
 
@@ -101,9 +97,9 @@ export default function ActivatePage() {
         return;
       }
 
+      // sign out so they sign in fresh with their new password
+      await supabase.auth.signOut();
       setPhase("done");
-      const role = ((data as { role?: string })?.role as Role) ?? "attendee";
-      setTimeout(() => router.replace(homeFor(role)), 1400);
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
@@ -157,14 +153,20 @@ export default function ActivatePage() {
   if (phase === "done") {
     return (
       <AuthSplit>
-        <Heading>YOU&apos;RE IN</Heading>
-        <div className="mt-6 grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
+        <div className="grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
           <ShieldCheck className="size-7" />
         </div>
+        <Heading>ACCOUNT ACTIVATED</Heading>
         <p className="mt-4 text-sm text-muted-foreground">
-          Your account is active and your seat is claimed. Taking you to your
-          dashboard…
+          Your account is ready and your seat is claimed. Sign in with your
+          email and new password to view your seat and digital pass.
         </p>
+        <Button asChild size="lg" className="mt-5 w-full">
+          <Link href="/signin">
+            Continue to sign in
+            <ArrowRight />
+          </Link>
+        </Button>
       </AuthSplit>
     );
   }
