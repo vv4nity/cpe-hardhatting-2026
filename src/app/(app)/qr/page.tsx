@@ -11,7 +11,6 @@ import { PageHeader } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { QrCode, passPayload } from "@/components/qr-code";
-import { GoogleWalletIcon } from "@/components/brand/wallet-icons";
 
 export default function QrPage() {
   const user = useApp((s) => s.user)!;
@@ -41,29 +40,6 @@ export default function QrPage() {
       showToast("Pass saved as PNG", "ok");
     } catch {
       showToast("Couldn't save the pass image", "err");
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function googleWallet() {
-    setSaving(true);
-    try {
-      const res = await fetch("/api/wallet/google");
-      const body = await res.json().catch(() => ({}));
-      if (!res.ok || !body.url) {
-        if (body.error === "not_configured") {
-          showToast("Google Wallet isn't set up yet — saved your pass image", "warn");
-          await downloadPassPng(passInfo());
-        } else {
-          showToast("Couldn't create the wallet pass", "err");
-        }
-        return;
-      }
-      // hands off to the official Add-to-Google-Wallet flow
-      window.location.href = body.url as string;
-    } catch {
-      showToast("Couldn't create the wallet pass", "err");
     } finally {
       setSaving(false);
     }
@@ -137,7 +113,7 @@ export default function QrPage() {
           </div>
         </Card>
 
-        {/* save / wallet actions */}
+        {/* save action */}
         <div className="space-y-2.5">
           <Button
             className="w-full"
@@ -152,18 +128,9 @@ export default function QrPage() {
             )}
             Save as PNG
           </Button>
-
-          <button
-            onClick={googleWallet}
-            disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-black px-3 py-3 text-sm font-semibold text-white shadow-sm transition-transform hover:brightness-110 active:scale-[0.98] disabled:opacity-60"
-          >
-            <GoogleWalletIcon className="size-5" />
-            Add to Google Wallet
-          </button>
           <p className="text-center text-xs text-muted-foreground">
-            Google Wallet adds a real pass on Android. On iPhone, tap “Save as
-            PNG” and present the QR at the gate.
+            Save your pass to your phone&apos;s gallery and present the QR at the
+            gate. No internet needed once it&apos;s saved.
           </p>
         </div>
       </div>

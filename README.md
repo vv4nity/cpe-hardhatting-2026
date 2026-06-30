@@ -2,7 +2,7 @@
 
 The attendance, onboarding, and QR-seating platform for the **PUP CpE
 Hardhatting Ceremony 2026** (Bulwagang Balagtas, July 1, 2026). Each attendee
-gets a reserved seat, a personal QR pass, and a digital wallet card; staff scan
+gets a reserved seat and a personal QR pass (savable as a PNG); staff scan
 passes at the door and organizers watch attendance fill the hall live.
 
 Built with **Next.js 16 (App Router, Turbopack) · React 19 · TypeScript ·
@@ -17,15 +17,15 @@ npm run dev      # http://localhost:3000
 npm run build    # production build
 ```
 
-Copy `.env.example` → `.env.local` and fill in the Supabase, Gmail, and Google
-Wallet values. See [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) for database setup
-and [`HOW-IT-WORKS.md`](HOW-IT-WORKS.md) for an end-to-end walkthrough.
+Copy `.env.example` → `.env.local` and fill in the Supabase and Gmail values.
+See [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) for database setup and
+[`HOW-IT-WORKS.md`](HOW-IT-WORKS.md) for an end-to-end walkthrough.
 
 ## Roles & screens
 
 | Role | What they get |
 | --- | --- |
-| **Attendee** | Dashboard (event facts + QR) · My QR · Seating map ("You are here") · Profile · Add to Google Wallet |
+| **Attendee** | Dashboard (event facts + QR) · My QR · Seating map ("You are here") · Profile · Save pass as PNG |
 | **Block President** | + Block Oversight (their block's roster & stats) |
 | **Scanner** | Full-screen `/scanner`: live camera QR, manual entry, **offline-resilient** check-in, scan-result feedback |
 | **Admin** | Overview (live metrics, realtime check-in chart, activity, block table) · Seating Map · **Invitations console** · Import/Export |
@@ -68,11 +68,12 @@ automatically. Sync is triggered three ways for flaky-signal venues:
 A `syncingRef` lock prevents double-posting; failed items stay queued and retry.
 Synced check-ins flow to the admin dashboard **live via Supabase Realtime**.
 
-### Digital pass & Google Wallet
+### Digital pass
 Each attendee has a personal QR pass (`HHC2026:<id>:<seat>`) shown on the
-dashboard and `/qr`, plus an **Add to Google Wallet** generic pass (event hero
-image, branded colors, seat/block modules, QR barcode) signed server-side
-(`/api/wallet/google`).
+dashboard and `/qr`. They can **Save as PNG** — a high-resolution, fully
+client-side render of the ticket (event hero, attendee details, perforation, QR
+stub via canvas in `src/lib/pass-image.ts`) that works offline once saved to the
+phone's gallery.
 
 ### Branded email
 Premium invitation template (event cover, League Gothic headline, Hanken
@@ -93,7 +94,6 @@ src/
     api/
       admin/                 # invite · fix-email · recipients · activation · email-requests
       public/                # email-request · forgot-password
-      wallet/google/         # signed Google Wallet pass
   components/
     ui/ app/ brand/ seating/ scanner/ auth/ admin/
   lib/
@@ -101,7 +101,7 @@ src/
     supabase/                # browser/server/admin clients, proxy, refresh
     checkin.ts               # seatFromScan · checkInSeat · flushQueue (offline queue)
     email/                   # invite · invite-one · reset templates
-    wallet/google.ts         # signed save JWT
+    pass-image.ts            # canvas render of the QR ticket → PNG
     rate-limit.ts            # DB-backed limiter
     views.ts | format.ts | nav.ts | status.ts | types.ts
 ```
