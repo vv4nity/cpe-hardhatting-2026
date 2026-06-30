@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Phase = "checking" | "form" | "invalid" | "done";
+type Phase = "checking" | "start" | "form" | "invalid" | "done";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -20,12 +20,32 @@ export default function ResetPasswordPage() {
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // one-time token carried in the email link (consumed only on button click)
+  const [confirmHref, setConfirmHref] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   // the recovery link must have established a session via /auth/confirm
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => {
-      setPhase(data.user ? "form" : "invalid");
+      if (data.user) {
+        // the token was already verified (button clicked) — show the form
+        setPhase("form");
+        return;
+      }
+      // not signed in yet: if the email link carried a one-time token, show a
+      // click-gated button (so link scanners can't consume it on a prefetch)
+      const params = new URLSearchParams(window.location.search);
+      const th = params.get("token_hash");
+      const ty = params.get("type");
+      if (th && ty) {
+        setConfirmHref(
+          `/auth/confirm?token_hash=${encodeURIComponent(th)}&type=${encodeURIComponent(ty)}&next=/reset-password`,
+        );
+        setPhase("start");
+      } else {
+        setPhase("invalid");
+      }
     });
   }, []);
 
@@ -64,6 +84,33 @@ export default function ResetPasswordPage() {
           <Loader2 className="size-4 animate-spin" />
           Checking your link…
         </div>
+      </AuthSplit>
+    );
+  }
+
+  if (phase === "start") {
+    return (
+      <AuthSplit>
+        <h1 className="font-display text-3xl leading-tight tracking-wide sm:text-4xl">
+          RESET YOUR PASSWORD
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Tap the button below to confirm your reset link, then choose a new
+          password.
+        </p>
+        <Button
+          size="lg"
+          className="mt-5 w-full"
+          disabled={confirming}
+          onClick={() => {
+            setConfirming(true);
+            window.location.href = confirmHref;
+          }}
+        >
+          {confirming ? <Loader2 className="size-4 animate-spin" /> : null}
+          Continue
+          <ArrowRight />
+        </Button>
       </AuthSplit>
     );
   }

@@ -41,7 +41,10 @@ export async function POST(request: Request) {
       email: clean,
     });
     if (!error && data?.properties?.hashed_token) {
-      const link = `${origin}/auth/confirm?token_hash=${data.properties.hashed_token}&type=recovery&next=/reset-password`;
+      // Land on /reset-password (which renders a click-gated button) rather than
+      // hitting /auth/confirm directly — so email scanners that pre-fetch the
+      // link can't consume the one-time token before the user clicks.
+      const link = `${origin}/reset-password?token_hash=${data.properties.hashed_token}&type=recovery`;
       await sendResetEmail(clean, link);
     }
   } catch {
