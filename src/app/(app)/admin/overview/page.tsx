@@ -391,6 +391,7 @@ function CheckinChart({
 }) {
   const grid = [1, 0.75, 0.5, 0.25, 0];
   const max = chart.max;
+  const hasData = chart.points.some((p) => p.value > 0);
 
   return (
     <div className="mt-6">
@@ -419,41 +420,53 @@ function CheckinChart({
               <stop offset="100%" stopColor="#10B981" stopOpacity="0.3" />
             </linearGradient>
           </defs>
-          {/* area fill */}
-          <path
-            d={chart.areaPath}
-            fill="url(#chartGradient)"
-            className="transition-all duration-300"
-          />
-          {/* line stroke */}
-          <path
-            d={chart.linePath}
-            stroke="url(#chartGradient)"
-            strokeWidth="1.5"
-            fill="none"
-            vectorEffect="non-scaling-stroke"
-            className="transition-all duration-300"
-            style={{
-              background: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
-              WebkitMaskImage: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
-            }}
-          />
-          {/* data points */}
-          {chart.points.map((p, i) => {
-            const n = chart.points.length;
-            const x = n > 1 ? 6 + (i / (n - 1)) * 88 : 50;
-            const y = 92 - p.ratio * 74;
-            return (
-              <circle
-                key={p.interval}
-                cx={x}
-                cy={y}
-                r="2"
-                fill="#FD8602"
-                opacity={p.value > 0 ? 0.8 : 0}
+          {hasData ? (
+            <>
+              {/* area fill */}
+              <path
+                d={chart.areaPath}
+                fill="url(#chartGradient)"
+                className="transition-all duration-300"
               />
-            );
-          })}
+              {/* line stroke */}
+              <path
+                d={chart.linePath}
+                stroke="url(#chartGradient)"
+                strokeWidth="1.5"
+                fill="none"
+                vectorEffect="non-scaling-stroke"
+                className="transition-all duration-300"
+                style={{
+                  background: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
+                  WebkitMaskImage: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
+                }}
+              />
+              {/* data points */}
+              {chart.points.map((p, i) => {
+                const n = chart.points.length;
+                const x = n > 1 ? 6 + (i / (n - 1)) * 88 : 50;
+                const y = 92 - p.ratio * 74;
+                return (
+                  <circle
+                    key={p.interval}
+                    cx={x}
+                    cy={y}
+                    r="2"
+                    fill="#FD8602"
+                    opacity={p.value > 0 ? 0.8 : 0}
+                  />
+                );
+              })}
+            </>
+          ) : (
+            <path
+              d="M 6 92 L 94 92"
+              stroke="#CBD5E1"
+              strokeWidth="1"
+              strokeDasharray="3 3"
+              fill="none"
+            />
+          )}
         </svg>
       </div>
 
