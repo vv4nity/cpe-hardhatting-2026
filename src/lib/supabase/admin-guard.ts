@@ -20,6 +20,24 @@ export async function requireAdmin(): Promise<AdminCheck> {
   return { ok: true };
 }
 
+/** Verify the caller is signed-in staff (admin OR scanner). */
+export async function requireStaff(): Promise<AdminCheck> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "unauthenticated" };
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "admin" && profile?.role !== "scanner") {
+    return { error: "forbidden" };
+  }
+  return { ok: true };
+}
+
 /** Standard JSON error response for a failed admin check. */
 export function adminError(check: { error: "unauthenticated" | "forbidden" }) {
   return NextResponse.json(

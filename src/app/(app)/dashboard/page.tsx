@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useApp } from "@/lib/store";
 import { STATUS } from "@/lib/status";
-import { firstNameOf } from "@/lib/format";
+import { firstNameOf, minutesToTime } from "@/lib/format";
 import { blockSummary } from "@/lib/views";
 import type { SeatStatus } from "@/lib/types";
 import { PageHeader } from "@/components/app/page-header";
@@ -70,6 +70,11 @@ export default function DashboardPage() {
                 />
                 {cfg.label}
               </span>
+              {myStatus === "present" && user.checkIn != null && (
+                <span className="text-sm font-semibold text-brand-green">
+                  Checked in at {minutesToTime(user.checkIn)}
+                </span>
+              )}
               <p className="text-sm text-muted-foreground">{HINTS[myStatus]}</p>
             </div>
 

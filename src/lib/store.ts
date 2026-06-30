@@ -102,6 +102,10 @@ interface AppState {
   setPendingCount: (n: number) => void;
   applyScanResult: (res: ScanResult) => void;
   markPresentLocal: (seat: string, when?: number) => void;
+  // attendee "you're checked in" — bumped to trigger the celebration overlay
+  checkinFlash: number;
+  fireCheckinFlash: () => void;
+  setMyCheckedIn: (whenMinutes: number) => void;
 
   runImport: () => void;
   exportData: () => void;
@@ -150,6 +154,7 @@ export const useApp = create<AppState>()(
       scanStats: { total: 0, success: 0, dup: 0 },
       online: true,
       pendingCount: 0,
+      checkinFlash: 0,
 
       importActive: false,
       importStage: "",
@@ -343,6 +348,13 @@ export const useApp = create<AppState>()(
             dup: s.scanStats.dup + (res.outcome === "duplicate" ? 1 : 0),
           },
         })),
+      fireCheckinFlash: () => set((s) => ({ checkinFlash: s.checkinFlash + 1 })),
+      setMyCheckedIn: (whenMinutes) =>
+        set((s) =>
+          s.user
+            ? { user: { ...s.user, status: "present", checkIn: whenMinutes } }
+            : {},
+        ),
       markPresentLocal: (seat, when) =>
         set((s) => {
           const key = seat.toUpperCase();

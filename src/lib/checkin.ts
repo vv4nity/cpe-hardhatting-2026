@@ -48,6 +48,21 @@ function enqueue(seat: string) {
   writeQueue(q);
 }
 
+/** Fire-and-forget: ask the server to email the attendee a check-in receipt.
+ * Best-effort — never blocks or breaks the scan flow. */
+function notifyCheckin(seat: string) {
+  try {
+    void fetch("/api/staff/checkin-email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ seat }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {
+    /* no-op */
+  }
+}
+
 /** Pull the seat out of a scanned QR ("HHC2026:<id>:<seat>") or raw input. */
 export function seatFromScan(raw: string): string {
   const t = (raw || "").trim();
@@ -83,6 +98,8 @@ export async function checkInSeat(seat: string): Promise<CheckInResult> {
       seat?: string;
       block?: string;
     };
+    // first-time check-in → email the attendee a confirmation receipt
+    if (r.status === "success") notifyCheckin(s);
     return {
       outcome: r.status,
       full_name: r.full_name,
@@ -106,12 +123,19 @@ export async function flushQueue(): Promise<number> {
   let synced = 0;
   for (const item of q) {
     try {
-      const { error } = await supabase.rpc("check_in", {
+      const { data, error } = await supabase.rpc("check_in", {
         p_seat: item.seat,
         p_gate: null,
       });
-      if (error) remaining.push(item);
-      else synced++;
+      if (error) {
+        remaining.push(item);
+      } else {
+        synced++;
+        // only the first successful check-in emails a receipt (not duplicates)
+        if ((data as { status?: string })?.status === "success") {
+          notifyCheckin(item.seat);
+        }
+      }
     } catch {
       remaining.push(item);
     }

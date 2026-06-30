@@ -33,6 +33,8 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const realRef = useRef(false);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const channelRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const meChannelRef = useRef<any>(null);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -146,6 +148,42 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           }, 30_000);
         }
       }
+
+      // attendees: watch their own row so the app reacts the instant they're
+      // scanned in at the gate (live "you're checked in" celebration).
+      if (!isStaff && !meChannelRef.current) {
+        meChannelRef.current = supabase
+          .channel("me-checkin")
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "directory",
+              filter: `claimed_by=eq.${uid}`,
+            },
+            (payload) => {
+              const row = payload.new as {
+                status?: string;
+                checked_in_at?: string | null;
+              };
+              const store = useApp.getState();
+              const prev = store.user?.status;
+              if (row.status === "present" && prev !== "present") {
+                const mins =
+                  timestampToMinutes(row.checked_in_at ?? null) ??
+                  new Date().getHours() * 60 + new Date().getMinutes();
+                store.setMyCheckedIn(mins);
+                store.fireCheckinFlash();
+              } else if (row.status && store.user && prev !== row.status) {
+                useApp.setState({
+                  user: { ...store.user, status: row.status as SeatStatus },
+                });
+              }
+            },
+          )
+          .subscribe();
+      }
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -177,6 +215,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
+      }
+      if (meChannelRef.current) {
+        supabase.removeChannel(meChannelRef.current);
+        meChannelRef.current = null;
       }
     };
   }, []);

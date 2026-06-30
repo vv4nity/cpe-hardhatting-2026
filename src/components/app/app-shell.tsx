@@ -10,6 +10,7 @@ import { signOutEverywhere } from "@/lib/auth-actions";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "@/components/brand/logo";
 import { PartnerLogos } from "@/components/brand/partner-logos";
+import { CheckinCelebration } from "@/components/app/checkin-celebration";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh flex-col pb-[calc(4.5rem+env(safe-area-inset-bottom))] lg:pb-0">
+      <CheckinCelebration />
       <header className="sticky top-0 z-40 border-b border-border/80 bg-background/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <Link href={tabs[0]?.href ?? "/"} className="min-w-0 shrink">

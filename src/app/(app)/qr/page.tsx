@@ -2,9 +2,18 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Building2, Download, Hash, Loader2, MapPin, User } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  Download,
+  Hash,
+  Loader2,
+  MapPin,
+  User,
+} from "lucide-react";
 import { useApp } from "@/lib/store";
 import { STATUS } from "@/lib/status";
+import { minutesToTime } from "@/lib/format";
 import type { SeatStatus } from "@/lib/types";
 import { downloadPassPng } from "@/lib/pass-image";
 import { PageHeader } from "@/components/app/page-header";
@@ -53,6 +62,13 @@ export default function QrPage() {
       />
 
       <div className="mx-auto max-w-md space-y-4">
+        {myStatus === "present" && (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border border-brand-green/30 bg-brand-green/10 px-4 py-3 text-center font-bold text-brand-green">
+            <CheckCircle2 className="size-5" />
+            Checked in
+            {user.checkIn != null ? ` · ${minutesToTime(user.checkIn)}` : ""}
+          </div>
+        )}
         <Card className="overflow-hidden rounded-3xl p-0 shadow-md">
           {/* hero banner */}
           <div className="relative aspect-[41/18] w-full">
