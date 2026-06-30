@@ -880,8 +880,6 @@ export default function InvitationsPage() {
             )}
           </CardContent>
         </Card>
-          </CardContent>
-        </Card>
 
         {/* right column: reminder + export */}
         <div className="space-y-4">
