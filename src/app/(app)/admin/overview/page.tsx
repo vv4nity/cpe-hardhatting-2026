@@ -474,13 +474,12 @@ function CheckinChart({
               })}
             </>
           ) : (
-            <path
-              d="M 6 92 L 94 92"
-              stroke="#CBD5E1"
-              strokeWidth="1"
-              strokeDasharray="3 3"
-              fill="none"
-            />
+            <g>
+              <rect x="6" y="18" width="88" height="62" fill="transparent" />
+              <text x="50" y="50" textAnchor="middle" fill="#9CA3AF" style={{ fontSize: "3.8px" }}>
+                No check-ins yet
+              </text>
+            </g>
           )}
         </svg>
       </div>
