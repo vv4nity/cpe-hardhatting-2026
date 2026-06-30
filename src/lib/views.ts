@@ -30,18 +30,18 @@ export interface ChartPoint {
 }
 
 const EVENT_CALL_TIME = 12 * 60; // 12:00 PM call time in minutes
-const INTERVAL_MINUTES = 15; // 15-minute monitoring window
+const INTERVAL_MINUTES = 30; // 30-minute monitoring window
 const MIN_INTERVALS = 6; // keep the chart readable with at least 6 intervals
 
-function roundDownToInterval(minutes: number) {
-  return Math.floor(minutes / INTERVAL_MINUTES) * INTERVAL_MINUTES;
+function roundDownToInterval(minutes: number, interval = INTERVAL_MINUTES) {
+  return Math.floor(minutes / interval) * interval;
 }
 
-function roundUpToInterval(minutes: number) {
-  return Math.ceil(minutes / INTERVAL_MINUTES) * INTERVAL_MINUTES;
+function roundUpToInterval(minutes: number, interval = INTERVAL_MINUTES) {
+  return Math.ceil(minutes / interval) * interval;
 }
 
-export function computeCheckinChart(data: Dataset): {
+export function computeCheckinChart(data: Dataset, intervalMinutes = INTERVAL_MINUTES): {
   points: ChartPoint[];
   max: number;
   areaPath: string;
@@ -56,21 +56,21 @@ export function computeCheckinChart(data: Dataset): {
   let start: number;
   let end: number;
   if (checkinTimes.length) {
-    start = roundDownToInterval(Math.min(...checkinTimes));
-    end = roundUpToInterval(Math.max(...checkinTimes));
+    start = roundDownToInterval(Math.min(...checkinTimes), intervalMinutes);
+    end = roundUpToInterval(Math.max(...checkinTimes), intervalMinutes);
   } else {
     start = EVENT_CALL_TIME - 60; // 11:00 AM
     end = EVENT_CALL_TIME; // noon
   }
 
-  if (end - start < MIN_INTERVALS * INTERVAL_MINUTES) {
-    end = start + MIN_INTERVALS * INTERVAL_MINUTES;
+  if (end - start < MIN_INTERVALS * intervalMinutes) {
+    end = start + MIN_INTERVALS * intervalMinutes;
   }
   start = Math.max(0, start);
   end = Math.min(24 * 60 - INTERVAL_MINUTES, end);
 
   const CHART_INTERVALS: number[] = [];
-  for (let t = start; t <= end; t += INTERVAL_MINUTES) {
+  for (let t = start; t <= end; t += intervalMinutes) {
     CHART_INTERVALS.push(t);
   }
 
@@ -78,7 +78,7 @@ export function computeCheckinChart(data: Dataset): {
   CHART_INTERVALS.forEach((t) => (buckets[t] = 0));
   data.attendees.forEach((a) => {
     if (a.checkIn != null) {
-      const interval = Math.floor(a.checkIn / INTERVAL_MINUTES) * INTERVAL_MINUTES;
+      const interval = Math.floor(a.checkIn / intervalMinutes) * intervalMinutes;
       if (buckets[interval] != null) buckets[interval]++;
     }
   });

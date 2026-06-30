@@ -150,7 +150,7 @@ export default function OverviewPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                  Check-ins by 15-minute interval
+                  Check-ins by 30-minute interval
                 </h2>
                 <p className="mt-1 text-2xl font-display tracking-wide">
                   {m.present}{" "}
@@ -159,7 +159,7 @@ export default function OverviewPage() {
                   </span>
                 </p>
                 <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-                  Live refresh every 15 minutes for sharper arrival trends.
+                  Live refresh every 30 minutes for sharper arrival trends.
                 </p>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber/15 px-3 py-1 text-xs font-bold text-brand-ink">
@@ -423,67 +423,35 @@ function CheckinChart({
           ))}
         </div>
 
-        {/* smooth area chart */}
-        <svg
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          className="absolute inset-y-0 left-9 right-0 h-full"
-        >
-          <defs>
-            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#FD8602" stopOpacity="0.3" />
-              <stop offset="100%" stopColor="#2E7D52" stopOpacity="0.3" />
-            </linearGradient>
-          </defs>
-          {hasData ? (
-            <>
-              {/* area fill */}
-              <path
-                d={chart.areaPath}
-                fill="url(#chartGradient)"
-                className="transition-all duration-300"
-              />
-              {/* line stroke */}
-              <path
-                d={chart.linePath}
-                stroke="url(#chartGradient)"
-                strokeWidth="1.5"
-                fill="none"
-                vectorEffect="non-scaling-stroke"
-                className="transition-all duration-300"
-                style={{
-                  background: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
-                  WebkitMaskImage: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
-                }}
-              />
-              {/* data points */}
-              {chart.points.map((p, i) => {
-                const n = chart.points.length;
-                const x = n > 1 ? 6 + (i / (n - 1)) * 88 : 50;
-                const y = 92 - p.ratio * 74;
-                return (
-                  <circle
-                    key={p.interval}
-                    cx={x}
-                    cy={y}
-                    r="2"
-                    fill="#FD8602"
-                    opacity={p.value > 0 ? 0.8 : 0}
-                    role="img"
-                    aria-label={`${p.label} · ${p.value} check-in${p.value === 1 ? "" : "s"}`}
-                  >
-                    <title>{`${p.label} · ${p.value} check-in${p.value === 1 ? "" : "s"}`}</title>
-                  </circle>
-                );
-              })}
-            </>
-          ) : (
-            <g>
-              <rect x="6" y="18" width="88" height="62" fill="transparent" />
-              {/* icon removed per user request */}
-            </g>
-          )}
-        </svg>
+        {/* bars */}
+        <div className="absolute inset-y-0 left-9 right-0 flex items-end gap-2.5">
+          {chart.points.map((p) => {
+            const isPeak = p.value === max;
+            return (
+              <div
+                key={p.interval}
+                className="group flex h-full flex-1 flex-col items-center justify-end"
+              >
+                <span
+                  className={`mb-1.5 text-xs font-bold tabular-nums transition-colors ${
+                    isPeak ? "text-brand-orange" : "text-muted-foreground"
+                  }`}
+                >
+                  {p.value}
+                </span>
+                <div
+                  className="w-full max-w-[44px] rounded-t-lg shadow-sm transition-all duration-300 group-hover:brightness-105"
+                  style={{
+                    height: `${Math.max(3, p.ratio * 100)}%`,
+                    background: isPeak
+                      ? "linear-gradient(180deg,#FD8602,#e0760a)"
+                      : "linear-gradient(180deg,#FFCB2E,#FFBF00)",
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* x labels */}
