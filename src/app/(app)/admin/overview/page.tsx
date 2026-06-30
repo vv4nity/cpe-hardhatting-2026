@@ -480,11 +480,7 @@ function CheckinChart({
           ) : (
             <g>
               <rect x="6" y="18" width="88" height="62" fill="transparent" />
-              <g transform="translate(50,34)">
-                <circle cx="0" cy="0" r="9" fill="#FFBF00" opacity="0.22" />
-                <rect x="-2" y="-2" width="4" height="4" fill="#FD8602" rx="0.5" />
-              </g>
-              {/* (Removed textual empty state per request) */}
+              {/* icon removed per user request */}
             </g>
           )}
         </svg>
