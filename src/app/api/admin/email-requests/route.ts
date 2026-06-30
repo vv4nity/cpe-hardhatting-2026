@@ -8,7 +8,44 @@ import { requireAdmin, adminError } from "@/lib/supabase/admin-guard";
 import { inviteOne } from "@/lib/email/invite-one";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 60;
+
+type AdminClient = ReturnType<typeof createAdminClient>;
+
+/** Approve one request: update the directory email, clear invited_at, then
+ * (re)send the invite unless the student is registered or activation is paused. */
+async function approveRequest(
+  admin: AdminClient,
+  req: { id: string; requested_email: string; directory_id: string },
+  origin: string,
+  paused: boolean,
+): Promise<boolean> {
+  const { data: row } = await admin
+    .from("directory")
+    .update({ email: req.requested_email, invited_at: null })
+    .eq("id", req.directory_id)
+    .select("id, full_name, email, claimed_by")
+    .single();
+  await admin
+    .from("email_change_requests")
+    .update({ status: "approved" })
+    .eq("id", req.id);
+
+  if (row && !row.claimed_by && isEmailConfigured && !paused) {
+    const result = await inviteOne(admin, row, origin);
+    return result.status === "sent";
+  }
+  return false;
+}
+
+async function isPaused(admin: AdminClient): Promise<boolean> {
+  const { data: setting } = await admin
+    .from("app_settings")
+    .select("value")
+    .eq("key", "activation_open")
+    .maybeSingle();
+  return !!setting && setting.value !== "true";
+}
 
 /** GET — pending email-change requests with student details. */
 export async function GET() {
@@ -49,7 +86,7 @@ export async function GET() {
   return NextResponse.json({ requests });
 }
 
-/** POST { id, action: "approve" | "reject" }. */
+/** POST { id, action: "approve" | "reject" } or { action: "approve_all" }. */
 export async function POST(request: Request) {
   const auth = await requireAdmin();
   if ("error" in auth) return adminError(auth);
@@ -58,13 +95,32 @@ export async function POST(request: Request) {
   }
   const { id, action } = (await request.json().catch(() => ({}))) as {
     id?: string;
-    action?: "approve" | "reject";
+    action?: "approve" | "reject" | "approve_all";
   };
+
+  const admin = createAdminClient();
+  const origin = new URL(request.url).origin;
+
+  // bulk: approve every pending request in one go
+  if (action === "approve_all") {
+    const { data: reqs } = await admin
+      .from("email_change_requests")
+      .select("id, requested_email, directory_id")
+      .eq("status", "pending");
+    const paused = await isPaused(admin);
+    let approved = 0;
+    let sent = 0;
+    for (const req of reqs ?? []) {
+      if (await approveRequest(admin, req, origin, paused)) sent++;
+      approved++;
+    }
+    return NextResponse.json({ ok: true, action: "approve_all", approved, sent });
+  }
+
   if (!id || (action !== "approve" && action !== "reject")) {
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const { data: req } = await admin
     .from("email_change_requests")
     .select("id, requested_email, directory_id, status")
@@ -82,31 +138,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, action: "rejected" });
   }
 
-  // approve: update the directory email + clear invited_at, then send invite
-  const { data: row } = await admin
-    .from("directory")
-    .update({ email: req.requested_email, invited_at: null })
-    .eq("id", req.directory_id)
-    .select("id, full_name, email, claimed_by")
-    .single();
-  await admin
-    .from("email_change_requests")
-    .update({ status: "approved" })
-    .eq("id", id);
-
-  let sent = false;
-  if (row && !row.claimed_by && isEmailConfigured) {
-    const { data: setting } = await admin
-      .from("app_settings")
-      .select("value")
-      .eq("key", "activation_open")
-      .maybeSingle();
-    const paused = !!setting && setting.value !== "true";
-    if (!paused) {
-      const origin = new URL(request.url).origin;
-      const result = await inviteOne(admin, row, origin);
-      sent = result.status === "sent";
-    }
-  }
+  const paused = await isPaused(admin);
+  const sent = await approveRequest(admin, req, origin, paused);
   return NextResponse.json({ ok: true, action: "approved", sent });
 }

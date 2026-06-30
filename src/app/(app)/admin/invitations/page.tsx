@@ -79,6 +79,7 @@ export default function InvitationsPage() {
 
   const [requests, setRequests] = useState<EmailRequest[]>([]);
   const [reqBusy, setReqBusy] = useState<string | null>(null);
+  const [approvingAll, setApprovingAll] = useState(false);
 
   // sending
   const [sending, setSending] = useState(false);
@@ -150,6 +151,32 @@ export default function InvitationsPage() {
       /* ignore */
     }
   }, []);
+
+  async function approveAll() {
+    if (!requests.length) return;
+    setApprovingAll(true);
+    try {
+      const res = await fetch("/api/admin/email-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve_all" }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast("Couldn't approve all requests.", "warn");
+        return;
+      }
+      showToast(
+        `Approved ${b.approved} · ${b.sent} invite${b.sent === 1 ? "" : "s"} sent`,
+        "ok",
+      );
+      loadRequests();
+      loadStats();
+      loadRecipients();
+    } finally {
+      setApprovingAll(false);
+    }
+  }
 
   async function handleRequest(id: string, action: "approve" | "reject") {
     setReqBusy(id);
@@ -448,10 +475,26 @@ export default function InvitationsPage() {
       {/* email-change requests (from the public "didn't get my invite" form) */}
       <Card className={requests.length > 0 ? "border-brand-orange/40" : ""}>
         <CardContent className="p-5">
-          <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-orange">
-            <Mail className="size-4" />
-            Email change requests · {requests.length}
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-orange">
+              <Mail className="size-4" />
+              Email change requests · {requests.length}
+            </h2>
+            {requests.length > 1 && (
+              <Button
+                size="sm"
+                onClick={approveAll}
+                disabled={approvingAll || reqBusy !== null}
+              >
+                {approvingAll ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Check className="size-3.5" />
+                )}
+                Approve all ({requests.length})
+              </Button>
+            )}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Students who said they didn&apos;t get their invite. Approve to
             update their email and send a fresh invite.
