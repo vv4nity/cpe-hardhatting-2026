@@ -44,6 +44,12 @@ function getTransport() {
   if (!transport) {
     transport = nodemailer.createTransport({
       service: "gmail",
+      // Pool one authenticated connection and reuse it for many messages so a
+      // whole batch is a SINGLE login — Gmail throttles login attempts
+      // (454-4.7.0) long before its daily message limit.
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 100,
       auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_APP_PASSWORD,
