@@ -180,27 +180,41 @@ export default function OverviewPage() {
               </h2>
             </div>
             <ul className="max-h-[22rem] divide-y divide-border/60 overflow-y-auto">
-              {activity.map((a) => (
-                <li key={a.id} className="flex items-center gap-3 px-6 py-3">
-                  <span
-                    className="size-2 shrink-0 rounded-full"
-                    style={{
-                      background: a.flagged ? "#FFBF00" : "#2E7D52",
-                    }}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-semibold">
-                      {a.name}
-                    </div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {a.seat} · {a.block} · {a.scanner}
-                    </div>
+              {activity.length === 0 ? (
+                <li className="px-6 py-10 text-center">
+                  <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-brand-amber/15 text-brand-orange">
+                    <span className="text-lg font-semibold">•</span>
                   </div>
-                  <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                    {a.time}
-                  </span>
+                  <p className="mt-3 text-sm font-semibold text-foreground">
+                    No check-ins yet
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Activity will appear here as attendees begin checking in.
+                  </p>
                 </li>
-              ))}
+              ) : (
+                activity.map((a) => (
+                  <li key={a.id} className="flex items-center gap-3 px-6 py-3">
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{
+                        background: a.flagged ? "#FFBF00" : "#2E7D52",
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold">
+                        {a.name}
+                      </div>
+                      <div className="truncate text-xs text-muted-foreground">
+                        {a.seat} · {a.block} · {a.scanner}
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                      {a.time}
+                    </span>
+                  </li>
+                ))
+              )}
             </ul>
           </CardContent>
         </Card>
