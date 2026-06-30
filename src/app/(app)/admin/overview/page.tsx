@@ -472,7 +472,6 @@ function CheckinChart({
             </span>
           );
         })}
-        ))}
       </div>
     </div>
   );
