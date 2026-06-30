@@ -1,25 +1,7 @@
 import "server-only";
-import nodemailer from "nodemailer";
+import { sendWithFallback } from "./transport";
 
 const SUBJECT = "Reset your CPE Hardhatting 2026 password";
-
-let transport: nodemailer.Transporter | null = null;
-function getTransport() {
-  if (!transport) {
-    transport = nodemailer.createTransport({
-      service: "gmail",
-      // reuse one authenticated connection (avoids Gmail's 454 login throttle)
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 100,
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-  }
-  return transport;
-}
 
 function html(link: string): string {
   return `<!doctype html><html><body style="margin:0;background:#faf6ee;font-family:Helvetica,Arial,sans-serif;color:#1a1712;">
@@ -41,10 +23,8 @@ function html(link: string): string {
   </td></tr></table></body></html>`;
 }
 
-/** Send a password-reset email via Gmail SMTP. */
+/** Send a password-reset email via Gmail SMTP (with backup-account failover). */
 export async function sendResetEmail(to: string, link: string) {
-  const from =
-    process.env.INVITE_FROM_EMAIL ||
-    `CPE Hardhatting 2026 <${process.env.GMAIL_USER}>`;
-  await getTransport().sendMail({ from, to, subject: SUBJECT, html: html(link) });
+  const body = html(link);
+  await sendWithFallback((from) => ({ from, to, subject: SUBJECT, html: body }));
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import path from "path";
-import nodemailer from "nodemailer";
 import { firstNameOf } from "@/lib/format";
+import { sendWithFallback } from "./transport";
 
 const SUBJECT = "You're invited — activate your CPE Hardhatting 2026 seat";
 
@@ -37,27 +37,6 @@ const ASSETS = [
   { cid: "icTicket", file: "email/ic-ticket.png" },
   { cid: "icId", file: "email/ic-id.png" },
 ] as const;
-
-/** Reused Gmail SMTP transport (created once). */
-let transport: nodemailer.Transporter | null = null;
-function getTransport() {
-  if (!transport) {
-    transport = nodemailer.createTransport({
-      service: "gmail",
-      // Pool one authenticated connection and reuse it for many messages so a
-      // whole batch is a SINGLE login — Gmail throttles login attempts
-      // (454-4.7.0) long before its daily message limit.
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 100,
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
-  }
-  return transport;
-}
 
 function detailRow(cid: string, label: string, value: string, sub?: string) {
   return `<tr>
@@ -197,21 +176,20 @@ function inviteHtml(name: string, link: string): string {
 </html>`;
 }
 
-/** Send one invitation email via Gmail SMTP. Throws on failure. */
+/** Send one invitation email via Gmail SMTP (with backup-account failover). */
 export async function sendInviteEmail(to: string, name: string, link: string) {
-  const from =
-    process.env.INVITE_FROM_EMAIL ||
-    `CPE Hardhatting 2026 <${process.env.GMAIL_USER}>`;
   const publicDir = path.join(process.cwd(), "public");
-  await getTransport().sendMail({
+  const html = inviteHtml(name, link);
+  const attachments = ASSETS.map((a) => ({
+    filename: a.file.split("/").pop()!,
+    path: path.join(publicDir, a.file),
+    cid: a.cid,
+  }));
+  await sendWithFallback((from) => ({
     from,
     to,
     subject: SUBJECT,
-    html: inviteHtml(name, link),
-    attachments: ASSETS.map((a) => ({
-      filename: a.file.split("/").pop()!,
-      path: path.join(publicDir, a.file),
-      cid: a.cid,
-    })),
-  });
+    html,
+    attachments,
+  }));
 }
