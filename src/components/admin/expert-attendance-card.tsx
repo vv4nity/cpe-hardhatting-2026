@@ -100,13 +100,13 @@ export function ExpertAttendanceCard() {
             Brief block presidents · {presidents.length}
           </h2>
           <div className="flex gap-2">
-            {presSentAt && (
+            {(presSentAt || presResults.length > 0) && (
               <div className="flex items-center gap-2 rounded-lg bg-brand-green/10 px-3 py-2 text-xs font-medium text-brand-green">
                 <CheckCircle2 className="size-4" />
-                Sent {presSentAt}
+                {presSentAt ? `Sent ${presSentAt}` : "Sent"}
               </div>
             )}
-            {presSentAt ? (
+            {presSentAt || presResults.length > 0 ? (
               <Button onClick={briefPresidents} disabled={presSending || presidents.length === 0 || !presReady} variant="outline">
                 {presSending ? <Loader2 className="size-4 animate-spin" /> : <RotateCw className="size-4" />}
                 Resend
