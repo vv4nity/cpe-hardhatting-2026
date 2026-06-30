@@ -17,11 +17,8 @@ export interface InviteResult {
   account?: "primary" | "backup";
 }
 
-/**
- * Build an /auth/confirm link for an email. Tries an "invite" link (creates the
- * auth user); if the user already exists, falls back to a "magiclink".
- */
-async function buildConfirmLink(
+/** Build an /activate link for an email, preferring invite links. */
+export async function buildActivationLink(
   admin: SupabaseClient,
   email: string,
   origin: string,
@@ -51,7 +48,7 @@ export async function inviteOne(
   const base = { id: row.id, name: row.full_name, email };
   if (!email) return { ...base, status: "failed", reason: "no email on file" };
   try {
-    const link = await buildConfirmLink(admin, email, origin);
+    const link = await buildActivationLink(admin, email, origin);
     const { account } = await sendInviteEmail(email, row.full_name, link);
     await admin
       .from("directory")

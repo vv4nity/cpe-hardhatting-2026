@@ -8,6 +8,8 @@ const SUBJECT = "You're checked in — CPE Hardhatting 2026 ✓";
 /** Inline images, embedded via CID (cover + partner-logo footer). */
 const ASSETS = [
   { cid: "cover", file: "main cover landscape.jpg" },
+  { cid: "icPin", file: "email/ic-pin.png" },
+  { cid: "icClock", file: "email/ic-clock.png" },
   { cid: "access", file: "access.png" },
   { cid: "cpedept", file: "cpe dept logo.png" },
   { cid: "icpep", file: "icpep.png" },
@@ -66,24 +68,30 @@ function checkinHtml(
           <tr><td class="pad" style="padding:24px 26px 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #efe7d6;background:#faf6ee;border-radius:18px;">
               <tr>
-                <td width="50%" align="center" style="padding:18px 10px;border-right:1px solid #efe7d6;">
-                  <div style="font-size:10.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#9a9082;">Seat</div>
-                  <div style="margin-top:4px;font-size:22px;font-weight:700;color:#1a1712;">${seat || "—"}</div>
+                <td width="50%" align="center" style="padding:20px 10px;border-right:1px solid #efe7d6;">
+                  <img src="cid:icPin" width="20" height="20" alt="" style="display:inline-block;border:0;opacity:0.85;" />
+                  <div style="margin-top:8px;font-size:10.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#9a9082;">Seat</div>
+                  <div style="margin-top:4px;font-size:24px;font-weight:700;color:#1a1712;">${seat || "—"}</div>
                 </td>
-                <td width="50%" align="center" style="padding:18px 10px;">
-                  <div style="font-size:10.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#9a9082;">Checked in at</div>
-                  <div style="margin-top:4px;font-size:22px;font-weight:700;color:#1a1712;">${timeLabel}</div>
+                <td width="50%" align="center" style="padding:20px 10px;">
+                  <img src="cid:icClock" width="20" height="20" alt="" style="display:inline-block;border:0;opacity:0.85;" />
+                  <div style="margin-top:8px;font-size:10.5px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:#9a9082;">Checked in at</div>
+                  <div style="margin-top:4px;font-size:24px;font-weight:700;color:#1a1712;">${timeLabel}</div>
                 </td>
               </tr>
-              ${
-                block
-                  ? `<tr><td colspan="2" align="center" style="padding:0 10px 16px;">
-                       <div style="font-size:12px;color:#6b6357;">Block ${block}</div>
-                     </td></tr>`
-                  : ""
-              }
             </table>
           </td></tr>
+
+          ${
+            block
+              ? `<!-- block pill -->
+          <tr><td class="pad" align="center" style="padding:16px 26px 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" align="center"><tr>
+              <td style="background:#1a1712;border-radius:999px;padding:8px 18px;font-size:12px;font-weight:700;letter-spacing:0.08em;color:#f9eeda;text-transform:uppercase;font-family:'Hanken Grotesk',Helvetica,Arial,sans-serif;">Block ${block}</td>
+            </tr></table>
+          </td></tr>`
+              : ""
+          }
 
           <!-- partner footer -->
           <tr><td class="pad" style="padding:30px 26px 0;">

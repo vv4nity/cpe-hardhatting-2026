@@ -115,6 +115,10 @@ export default function InvitationsPage() {
   const [presTest, setPresTest] = useState("");
   const [presTesting, setPresTesting] = useState(false);
 
+  const [reminderLabel, setReminderLabel] = useState<string | null>(null);
+  const [reminderSentLabel, setReminderSentLabel] = useState<string | null>(null);
+  const [reminderBusy, setReminderBusy] = useState(false);
+
   const loadStats = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/invite");
@@ -170,6 +174,19 @@ export default function InvitationsPage() {
         const b = await res.json();
         setPresidents(b.presidents ?? []);
         setPresReady(b.emailReady);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const loadReminder = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/activation-reminder");
+      if (res.ok) {
+        const b = await res.json();
+        setReminderLabel(b.scheduledLabel ?? null);
+        setReminderSentLabel(b.sentLabel ?? null);
       }
     } catch {
       /* ignore */
@@ -238,7 +255,29 @@ export default function InvitationsPage() {
     loadActivation();
     loadRequests();
     loadPresidents();
-  }, [loadStats, loadRecipients, loadActivation, loadRequests, loadPresidents]);
+    loadReminder();
+  }, [loadStats, loadRecipients, loadActivation, loadRequests, loadPresidents, loadReminder]);
+
+  async function scheduleReminder() {
+    setReminderBusy(true);
+    try {
+      const res = await fetch("/api/admin/activation-reminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "schedule_tomorrow" }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast("Couldn't schedule the reminder.", "warn");
+        return;
+      }
+      setReminderLabel(b.scheduledLabel ?? null);
+      setReminderSentLabel(null);
+      showToast(`Reminder scheduled for ${b.scheduledLabel}`, "ok");
+    } finally {
+      setReminderBusy(false);
+    }
+  }
 
   async function toggleActivation() {
     if (activationOpen === null) return;
@@ -832,6 +871,32 @@ export default function InvitationsPage() {
 
         {/* right column: fix email + export */}
         <div className="space-y-5">
+          <Card>
+            <CardContent className="p-6">
+              <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                Activation reminder
+              </h2>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Schedules a one-time branded reminder for attendees who already got
+                an invite but still haven&apos;t activated their account.
+              </p>
+              <div className="mt-3 rounded-xl border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
+                <div>
+                  Target: <span className="font-medium text-foreground">tomorrow 9:30 AM</span> ({"Asia/Manila"})
+                </div>
+                <div className="mt-1">Scheduled: {reminderLabel ?? "not yet"}</div>
+                <div className="mt-1">Sent: {reminderSentLabel ?? "not yet"}</div>
+              </div>
+              <Button className="mt-4 w-full" onClick={scheduleReminder} disabled={reminderBusy}>
+                {reminderBusy ? <Loader2 className="size-4 animate-spin" /> : <Mail />}
+                Schedule tomorrow&apos;s reminder
+              </Button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Uses the same activation-link flow as the invite emails, then sends automatically when the cron job runs.
+              </p>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="p-6">
               <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
