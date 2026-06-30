@@ -48,6 +48,10 @@ export function ExpertAttendanceCard() {
 
   useEffect(() => {
     loadPresidents();
+    const saved = window.localStorage.getItem("presidents-brief-sent-at");
+    if (saved) {
+      setPresSentAt(saved);
+    }
   }, [loadPresidents]);
 
   async function briefPresidents() {
@@ -69,7 +73,9 @@ export function ExpertAttendanceCard() {
       }
       // Set timestamp when send completes
       const now = new Date();
-      setPresSentAt(now.toLocaleString());
+      const timestamp = now.toLocaleString();
+      setPresSentAt(timestamp);
+      window.localStorage.setItem("presidents-brief-sent-at", timestamp);
     } finally {
       setPresSending(false);
     }
