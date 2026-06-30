@@ -147,16 +147,19 @@ export default function OverviewPage() {
         {/* chart */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                  Check-ins by hour
+                  Check-ins by 15-minute interval
                 </h2>
                 <p className="mt-1 text-2xl font-display tracking-wide">
                   {m.present}{" "}
                   <span className="text-sm font-sans font-medium text-muted-foreground">
                     total check-ins
                   </span>
+                </p>
+                <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
+                  Live refresh every 15 minutes for sharper arrival trends.
                 </p>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber/15 px-3 py-1 text-xs font-bold text-brand-ink">
@@ -438,11 +441,11 @@ function CheckinChart({
           {/* data points */}
           {chart.points.map((p, i) => {
             const n = chart.points.length;
-            const x = 6 + (i / (n - 1)) * 88;
+            const x = n > 1 ? 6 + (i / (n - 1)) * 88 : 50;
             const y = 92 - p.ratio * 74;
             return (
               <circle
-                key={p.hour}
+                key={p.interval}
                 cx={x}
                 cy={y}
                 r="2"
@@ -456,15 +459,19 @@ function CheckinChart({
 
       {/* x labels */}
       <div className="ml-9 mt-2 flex gap-2.5">
-        {chart.points.map((p) => (
-          <span
-            key={p.hour}
-            className={`flex-1 text-center text-xs font-medium ${
-              p.value > 0 ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            {p.label}
-          </span>
+        {chart.points.map((p, i) => {
+          const shouldShowLabel = chart.points.length <= 8 || i % 2 === 0 || i === chart.points.length - 1;
+          return (
+            <span
+              key={p.interval}
+              className={`flex-1 text-center text-xs font-medium ${
+                shouldShowLabel ? (p.value > 0 ? "text-foreground" : "text-muted-foreground") : "text-transparent"
+              }`}
+            >
+              {shouldShowLabel ? p.label : ""}
+            </span>
+          );
+        })}
         ))}
       </div>
     </div>

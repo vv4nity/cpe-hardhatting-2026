@@ -1,7 +1,7 @@
 import type { Dataset, SeatStatus } from "@/lib/types";
 import { STATUS } from "@/lib/status";
 import { SECTIONS } from "@/lib/sections";
-import { hourLabel, minutesToTime } from "@/lib/format";
+import { minutesToTime } from "@/lib/format";
 
 export interface Metrics {
   total: number;
@@ -22,15 +22,24 @@ export function computeMetrics(data: Dataset): Metrics {
 }
 
 export interface ChartPoint {
-  hour: number;
+  interval: number;
   label: string;
   value: number;
   /** 0..1 of max */
   ratio: number;
 }
 
-const EVENT_CALL_HOUR = 12; // 12:00 PM call time
-const MIN_SPAN = 6; // keep the chart readable with at least this many hours
+const EVENT_CALL_TIME = 12 * 60; // 12:00 PM call time in minutes
+const INTERVAL_MINUTES = 15; // 15-minute monitoring window
+const MIN_INTERVALS = 6; // keep the chart readable with at least 6 intervals
+
+function roundDownToInterval(minutes: number) {
+  return Math.floor(minutes / INTERVAL_MINUTES) * INTERVAL_MINUTES;
+}
+
+function roundUpToInterval(minutes: number) {
+  return Math.ceil(minutes / INTERVAL_MINUTES) * INTERVAL_MINUTES;
+}
 
 export function computeCheckinChart(data: Dataset): {
   points: ChartPoint[];
@@ -38,46 +47,53 @@ export function computeCheckinChart(data: Dataset): {
   areaPath: string;
   linePath: string;
 } {
-  // build the hour window from the REAL check-in times; before the event
+  // build the 15-minute window from the REAL check-in times; before the event
   // (no check-ins yet) fall back to a window around the call time
-  const hours = data.attendees
+  const checkinTimes = data.attendees
     .filter((a) => a.checkIn != null)
-    .map((a) => Math.floor((a.checkIn as number) / 60));
+    .map((a) => a.checkIn as number);
+
   let start: number;
   let end: number;
-  if (hours.length) {
-    start = Math.min(...hours);
-    end = Math.max(...hours);
+  if (checkinTimes.length) {
+    start = roundDownToInterval(Math.min(...checkinTimes));
+    end = roundUpToInterval(Math.max(...checkinTimes));
   } else {
-    start = EVENT_CALL_HOUR - 1; // 11 AM
-    end = EVENT_CALL_HOUR; // noon
+    start = EVENT_CALL_TIME - 60; // 11:00 AM
+    end = EVENT_CALL_TIME; // noon
   }
-  if (end - start < MIN_SPAN - 1) end = start + MIN_SPAN - 1;
+
+  if (end - start < MIN_INTERVALS * INTERVAL_MINUTES) {
+    end = start + MIN_INTERVALS * INTERVAL_MINUTES;
+  }
   start = Math.max(0, start);
-  end = Math.min(23, end);
-  const CHART_HOURS: number[] = [];
-  for (let h = start; h <= end; h++) CHART_HOURS.push(h);
+  end = Math.min(24 * 60 - INTERVAL_MINUTES, end);
+
+  const CHART_INTERVALS: number[] = [];
+  for (let t = start; t <= end; t += INTERVAL_MINUTES) {
+    CHART_INTERVALS.push(t);
+  }
 
   const buckets: Record<number, number> = {};
-  CHART_HOURS.forEach((h) => (buckets[h] = 0));
+  CHART_INTERVALS.forEach((t) => (buckets[t] = 0));
   data.attendees.forEach((a) => {
     if (a.checkIn != null) {
-      const h = Math.floor(a.checkIn / 60);
-      if (buckets[h] != null) buckets[h]++;
+      const interval = Math.floor(a.checkIn / INTERVAL_MINUTES) * INTERVAL_MINUTES;
+      if (buckets[interval] != null) buckets[interval]++;
     }
   });
   const max = Math.max(1, ...Object.values(buckets));
-  const points: ChartPoint[] = CHART_HOURS.map((h) => ({
-    hour: h,
-    label: hourLabel(h),
-    value: buckets[h],
-    ratio: buckets[h] / max,
+  const points: ChartPoint[] = CHART_INTERVALS.map((t) => ({
+    interval: t,
+    label: minutesToTime(t),
+    value: buckets[t],
+    ratio: buckets[t] / max,
   }));
 
   const pad = 6;
-  const n = CHART_HOURS.length;
+  const n = points.length;
   const coords = points.map((p, i) => {
-    const x = pad + (i / (n - 1)) * (100 - 2 * pad);
+    const x = n > 1 ? pad + (i / (n - 1)) * (100 - 2 * pad) : 50;
     const y = 92 - p.ratio * 74;
     return { x, y };
   });
