@@ -881,46 +881,45 @@ export default function InvitationsPage() {
           </CardContent>
         </Card>
 
-        {/* right column: reminder + export */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              Activation reminder
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Schedules a one-time branded reminder for attendees who already got
+              an invite but still haven&apos;t activated their account.
+            </p>
+            <div className="mt-3 rounded-xl border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
+              <div>
+                Target: <span className="font-medium text-foreground">tomorrow 9:30 AM</span> ({"Asia/Manila"})
+              </div>
+              <div className="mt-1">Scheduled: {reminderLabel ?? "not yet"}</div>
+              <div className="mt-1">Sent: {reminderSentLabel ?? "not yet"}</div>
+            </div>
+            <Button
+              className="mt-4 w-full"
+              onClick={scheduleReminder}
+              disabled={reminderBusy || reminderScheduled}
+            >
+              {reminderBusy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : reminderScheduled ? (
+                <CheckCircle2 className="size-4" />
+              ) : (
+                <Mail />
+              )}
+              {reminderBusy ? "Scheduling…" : reminderScheduled ? "Scheduled" : "Schedule tomorrow&apos;s reminder"}
+            </Button>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Uses the same activation-link flow as the invite emails, then sends automatically when the cron job runs.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* right column: expert attendance */}
         <div className="space-y-4">
           <ExpertAttendanceCard />
-
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                Activation reminder
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Schedules a one-time branded reminder for attendees who already got
-                an invite but still haven&apos;t activated their account.
-              </p>
-              <div className="mt-3 rounded-xl border border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
-                <div>
-                  Target: <span className="font-medium text-foreground">tomorrow 9:30 AM</span> ({"Asia/Manila"})
-                </div>
-                <div className="mt-1">Scheduled: {reminderLabel ?? "not yet"}</div>
-                <div className="mt-1">Sent: {reminderSentLabel ?? "not yet"}</div>
-              </div>
-              <Button
-                className="mt-4 w-full"
-                onClick={scheduleReminder}
-                disabled={reminderBusy || reminderScheduled}
-              >
-                {reminderBusy ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : reminderScheduled ? (
-                  <CheckCircle2 className="size-4" />
-                ) : (
-                  <Mail />
-                )}
-                {reminderBusy ? "Scheduling…" : reminderScheduled ? "Scheduled" : "Schedule tomorrow&apos;s reminder"}
-              </Button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Uses the same activation-link flow as the invite emails, then sends automatically when the cron job runs.
-              </p>
-            </CardContent>
-          </Card>
-
         </div>
       </div>
 
