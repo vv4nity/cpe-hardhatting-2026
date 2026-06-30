@@ -61,11 +61,40 @@ export function ScannerScreen() {
   const resultRef = useRef(scanResult);
   const busyRef = useRef(false);
   const soundRef = useRef(soundOn);
+  const syncingRef = useRef(false);
   // keep the refs (read inside camera callbacks) in sync after each render
   useEffect(() => {
     dataRef.current = data;
     resultRef.current = scanResult;
     soundRef.current = soundOn;
+  });
+
+  // push any queued (offline) check-ins to the server; safe to call anytime
+  async function syncQueue(announce = false) {
+    if (syncingRef.current) return;
+    if (typeof navigator !== "undefined" && !navigator.onLine) return;
+    if (queueCount() === 0) return;
+    syncingRef.current = true;
+    try {
+      const n = await flushQueue();
+      setPendingCount(queueCount());
+      if (n > 0) {
+        setOnline(true);
+        refreshStaffData();
+        if (announce) {
+          showToast(
+            `Synced ${n} offline check-in${n === 1 ? "" : "s"}`,
+            "ok",
+          );
+        }
+      }
+    } finally {
+      syncingRef.current = false;
+    }
+  }
+  const syncRef = useRef(syncQueue);
+  useEffect(() => {
+    syncRef.current = syncQueue;
   });
 
   function beep(ok: boolean) {
@@ -188,6 +217,8 @@ export function ScannerScreen() {
         );
       }
       setPendingCount(queueCount());
+      // a successful online scan proves connectivity — drain any backlog now
+      if (res.outcome !== "queued") syncRef.current(true);
     } finally {
       busyRef.current = false;
     }
@@ -197,21 +228,22 @@ export function ScannerScreen() {
   useEffect(() => {
     setOnline(navigator.onLine);
     setPendingCount(queueCount());
-    const goOnline = async () => {
+    const goOnline = () => {
       setOnline(true);
-      const n = await flushQueue();
-      setPendingCount(queueCount());
-      if (n > 0) {
-        refreshStaffData();
-        showToast(`Synced ${n} offline check-in${n === 1 ? "" : "s"}`, "ok");
-      }
+      syncRef.current(true);
     };
     const goOffline = () => setOnline(false);
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
+    // periodic safety net: retry queued scans even on flaky signal where the
+    // browser never fires a clean offline→online transition
+    const timer = setInterval(() => syncRef.current(true), 20_000);
+    // try once on mount in case scans were queued in a previous session
+    syncRef.current(true);
     return () => {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
+      clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
