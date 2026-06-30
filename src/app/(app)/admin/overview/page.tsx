@@ -89,6 +89,8 @@ export default function OverviewPage() {
   const stillAssigned = data.attendees.filter(
     (a) => a.status === "assigned",
   ).length;
+  // the finalize control unlocks on event day (July 1, 2026) and after
+  const isEventDay = new Date() >= new Date(2026, 6, 1);
 
   const metrics = [
     { label: "Total registered", value: m.total, sub: `of ${data.seats.length} seats`, tone: "plain" },
@@ -323,6 +325,11 @@ export default function OverviewPage() {
               · {m.noShow} no-show. Late arrivals scanned after this still count
               as present.
             </p>
+            {!isEventDay && (
+              <p className="mt-1.5 text-xs font-semibold text-brand-orange">
+                Available on event day (July 1).
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 gap-2">
             {m.noShow > 0 && (
@@ -336,7 +343,7 @@ export default function OverviewPage() {
             )}
             <Button
               onClick={() => finalize("finalize")}
-              disabled={finalizing || stillAssigned === 0}
+              disabled={finalizing || stillAssigned === 0 || !isEventDay}
             >
               {finalizing ? <Loader2 className="animate-spin" /> : <Flag />}
               Mark {stillAssigned} as no-show
