@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Mail, Send, ShieldCheck, TriangleAlert, X } from "lucide-react";
+import { CheckCircle2, Loader2, Mail, RotateCw, Send, ShieldCheck, TriangleAlert, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ export function ExpertAttendanceCard() {
   const [presResults, setPresResults] = useState<SendResult[]>([]);
   const [presTest, setPresTest] = useState("");
   const [presTesting, setPresTesting] = useState(false);
+  const [presSentAt, setPresSentAt] = useState<string | null>(null);
 
   const loadPresidents = useCallback(async () => {
     try {
@@ -66,6 +67,9 @@ export function ExpertAttendanceCard() {
         if (!res.ok) break;
         setPresResults((prev) => [...prev, ...((b.results ?? []) as SendResult[])]);
       }
+      // Set timestamp when send completes
+      const now = new Date();
+      setPresSentAt(now.toLocaleString());
     } finally {
       setPresSending(false);
     }
@@ -95,10 +99,25 @@ export function ExpertAttendanceCard() {
             <ShieldCheck className="size-4 text-brand-orange" />
             Brief block presidents · {presidents.length}
           </h2>
-          <Button onClick={briefPresidents} disabled={presSending || presidents.length === 0 || !presReady}>
-            {presSending ? <Loader2 className="size-4 animate-spin" /> : <Send />}
-            Email all {presidents.length} presidents
-          </Button>
+          <div className="flex gap-2">
+            {presSentAt && (
+              <div className="flex items-center gap-2 rounded-lg bg-brand-green/10 px-3 py-2 text-xs font-medium text-brand-green">
+                <CheckCircle2 className="size-4" />
+                Sent {presSentAt}
+              </div>
+            )}
+            {presSentAt ? (
+              <Button onClick={briefPresidents} disabled={presSending || presidents.length === 0 || !presReady} variant="outline">
+                {presSending ? <Loader2 className="size-4 animate-spin" /> : <RotateCw className="size-4" />}
+                Resend
+              </Button>
+            ) : (
+              <Button onClick={briefPresidents} disabled={presSending || presidents.length === 0 || !presReady}>
+                {presSending ? <Loader2 className="size-4 animate-spin" /> : <Send />}
+                Email all {presidents.length} presidents
+              </Button>
+            )}
+          </div>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           Sends every block president a branded briefing on their role — monitoring their block&apos;s attendance, following up with absent blockmates, and helping with activation/invite issues — with a button to their Block Oversight dashboard.
