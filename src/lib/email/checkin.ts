@@ -15,7 +15,7 @@ const ASSETS = [
   { cid: "icpep", file: "icpep.png" },
 ] as const;
 
-function checkinHtml(
+export function checkinHtml(
   name: string,
   seat: string,
   block: string,

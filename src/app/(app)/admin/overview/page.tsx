@@ -404,35 +404,54 @@ function CheckinChart({
           ))}
         </div>
 
-        {/* bars */}
-        <div className="absolute inset-y-0 left-9 right-0 flex items-end gap-2.5">
-          {chart.points.map((p) => {
-            const isPeak = p.value === max;
+        {/* smooth area chart */}
+        <svg
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          className="absolute inset-y-0 left-9 right-0 h-full"
+        >
+          <defs>
+            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#FD8602" stopOpacity="0.3" />
+              <stop offset="100%" stopColor="#10B981" stopOpacity="0.3" />
+            </linearGradient>
+          </defs>
+          {/* area fill */}
+          <path
+            d={chart.areaPath}
+            fill="url(#chartGradient)"
+            className="transition-all duration-300"
+          />
+          {/* line stroke */}
+          <path
+            d={chart.linePath}
+            stroke="url(#chartGradient)"
+            strokeWidth="1.5"
+            fill="none"
+            vectorEffect="non-scaling-stroke"
+            className="transition-all duration-300"
+            style={{
+              background: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
+              WebkitMaskImage: "linear-gradient(90deg, #FD8602 0%, #10B981 100%)",
+            }}
+          />
+          {/* data points */}
+          {chart.points.map((p, i) => {
+            const n = chart.points.length;
+            const x = 6 + (i / (n - 1)) * 88;
+            const y = 92 - p.ratio * 74;
             return (
-              <div
+              <circle
                 key={p.hour}
-                className="group flex h-full flex-1 flex-col items-center justify-end"
-              >
-                <span
-                  className={`mb-1.5 text-xs font-bold tabular-nums transition-colors ${
-                    isPeak ? "text-brand-orange" : "text-muted-foreground"
-                  }`}
-                >
-                  {p.value}
-                </span>
-                <div
-                  className="w-full max-w-[44px] rounded-t-lg shadow-sm transition-all duration-300 group-hover:brightness-105"
-                  style={{
-                    height: `${Math.max(3, p.ratio * 100)}%`,
-                    background: isPeak
-                      ? "linear-gradient(180deg,#FD8602,#e0760a)"
-                      : "linear-gradient(180deg,#FFCB2E,#FFBF00)",
-                  }}
-                />
-              </div>
+                cx={x}
+                cy={y}
+                r="2"
+                fill="#FD8602"
+                opacity={p.value > 0 ? 0.8 : 0}
+              />
             );
           })}
-        </div>
+        </svg>
       </div>
 
       {/* x labels */}
@@ -441,7 +460,7 @@ function CheckinChart({
           <span
             key={p.hour}
             className={`flex-1 text-center text-xs font-medium ${
-              p.value === max ? "text-foreground" : "text-muted-foreground"
+              p.value > 0 ? "text-foreground" : "text-muted-foreground"
             }`}
           >
             {p.label}
