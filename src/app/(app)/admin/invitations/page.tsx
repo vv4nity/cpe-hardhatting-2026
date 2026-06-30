@@ -789,94 +789,97 @@ export default function InvitationsPage() {
                 </Button>
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
-                  Fix a wrong email
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  For a student who didn&apos;t get their invite (typo, etc.).
-                  Search them, set the correct email — it saves and re-sends.
-                </p>
+        {/* fix-email card */}
+        <Card>
+          <CardContent className="p-6">
+            <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
+              Fix a wrong email
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              For a student who didn&apos;t get their invite (typo, etc.).
+              Search them, set the correct email — it saves and re-sends.
+            </p>
 
-                <div className="relative mt-4">
-                  <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={fixQuery}
-                    onChange={(e) => {
-                      setFixQuery(e.target.value);
-                      setFixSel(null);
-                    }}
-                    placeholder="Search a student by name…"
-                    className="pl-8"
-                  />
-                  {!fixSel && fixMatches.length > 0 && (
-                    <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
-                      {fixMatches.map((r) => (
-                        <button
-                          key={r.id}
-                          onClick={() => {
-                            setFixSel(r);
-                            setFixEmail(r.email);
-                            setFixQuery(r.name);
-                          }}
-                          className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-secondary/60"
-                        >
-                          <span className="truncate font-medium">{r.name}</span>
-                          <span className="shrink-0 text-xs text-muted-foreground">
-                            {r.registered ? "registered" : r.seat}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
+            <div className="relative mt-4">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={fixQuery}
+                onChange={(e) => {
+                  setFixQuery(e.target.value);
+                  setFixSel(null);
+                }}
+                placeholder="Search a student by name…"
+                className="pl-8"
+              />
+              {!fixSel && fixMatches.length > 0 && (
+                <div className="absolute z-10 mt-1 w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg">
+                  {fixMatches.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setFixSel(r);
+                        setFixEmail(r.email);
+                        setFixQuery(r.name);
+                      }}
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-sm hover:bg-secondary/60"
+                    >
+                      <span className="truncate font-medium">{r.name}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">
+                        {r.registered ? "registered" : r.seat}
+                      </span>
+                    </button>
+                  ))}
                 </div>
+              )}
+            </div>
 
-                {fixSel && (
-                  <div className="mt-3 space-y-2.5 rounded-xl border border-border bg-secondary/30 p-3">
-                    <div className="text-sm font-semibold">{fixSel.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Current: {fixSel.email || "—"}
-                      {fixSel.registered && " · already registered"}
-                    </div>
-                    <Input
-                      type="email"
-                      value={fixEmail}
-                      onChange={(e) => setFixEmail(e.target.value)}
-                      placeholder="correct@email.com"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        className="flex-1"
-                        disabled={fixSaving || !fixEmail.trim() || fixEmail.trim() === fixSel.email}
-                        onClick={async () => {
-                          setFixSaving(true);
-                          const ok = await saveEmail(fixSel.id, fixEmail);
-                          setFixSaving(false);
-                          if (ok) {
-                            setFixSel(null);
-                            setFixQuery("");
-                          }
-                        }}
-                      >
-                        {fixSaving ? <Loader2 className="size-4 animate-spin" /> : <Send />}
-                        Save &amp; re-invite
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setFixSel(null);
-                          setFixQuery("");
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {fixSel && (
+              <div className="mt-3 space-y-2.5 rounded-xl border border-border bg-secondary/30 p-3">
+                <div className="text-sm font-semibold">{fixSel.name}</div>
+                <div className="text-xs text-muted-foreground">
+                  Current: {fixSel.email || "—"}
+                  {fixSel.registered && " · already registered"}
+                </div>
+                <Input
+                  type="email"
+                  value={fixEmail}
+                  onChange={(e) => setFixEmail(e.target.value)}
+                  placeholder="correct@email.com"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    disabled={fixSaving || !fixEmail.trim() || fixEmail.trim() === fixSel.email}
+                    onClick={async () => {
+                      setFixSaving(true);
+                      const ok = await saveEmail(fixSel.id, fixEmail);
+                      setFixSaving(false);
+                      if (ok) {
+                        setFixSel(null);
+                        setFixQuery("");
+                      }
+                    }}
+                  >
+                    {fixSaving ? <Loader2 className="size-4 animate-spin" /> : <Send />}
+                    Save &amp; re-invite
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setFixSel(null);
+                      setFixQuery("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
           </CardContent>
         </Card>
 
