@@ -12,7 +12,6 @@ import {
   RotateCw,
   Search,
   Send,
-  ShieldCheck,
   TriangleAlert,
   Unlock,
   Users,
@@ -65,8 +64,6 @@ interface EmailRequest {
   registered: boolean;
 }
 
-const BATCH = 6; // small enough that each request stays well under the 60s function limit
-
 export default function InvitationsPage() {
   const exportData = useApp((s) => s.exportData);
   const showToast = useApp((s) => s.showToast);
@@ -105,15 +102,6 @@ export default function InvitationsPage() {
   // preview test
   const [testEmail, setTestEmail] = useState("");
   const [testing, setTesting] = useState(false);
-
-  // block-president briefing
-  const [presidents, setPresidents] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [presReady, setPresReady] = useState(true);
-  const [presSending, setPresSending] = useState(false);
-  const [presTotal, setPresTotal] = useState(0);
-  const [presResults, setPresResults] = useState<SendResult[]>([]);
-  const [presTest, setPresTest] = useState("");
-  const [presTesting, setPresTesting] = useState(false);
 
   const [reminderLabel, setReminderLabel] = useState<string | null>(null);
   const [reminderSentLabel, setReminderSentLabel] = useState<string | null>(null);
@@ -162,19 +150,6 @@ export default function InvitationsPage() {
     try {
       const res = await fetch("/api/admin/email-requests");
       if (res.ok) setRequests((await res.json()).requests ?? []);
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  const loadPresidents = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/president-email");
-      if (res.ok) {
-        const b = await res.json();
-        setPresidents(b.presidents ?? []);
-        setPresReady(b.emailReady);
-      }
     } catch {
       /* ignore */
     }
@@ -254,9 +229,8 @@ export default function InvitationsPage() {
     loadRecipients();
     loadActivation();
     loadRequests();
-    loadPresidents();
     loadReminder();
-  }, [loadStats, loadRecipients, loadActivation, loadRequests, loadPresidents, loadReminder]);
+  }, [loadStats, loadRecipients, loadActivation, loadRequests, loadReminder]);
 
   async function scheduleReminder() {
     setReminderBusy(true);
@@ -449,67 +423,6 @@ export default function InvitationsPage() {
       showToast("Test send failed.", "warn");
     } finally {
       setTesting(false);
-    }
-  }
-
-  async function briefPresidents() {
-    if (!presidents.length) {
-      showToast("No block presidents with an email on file.", "warn");
-      return;
-    }
-    if (
-      !window.confirm(
-        `Email the block-president briefing to all ${presidents.length} presidents?`,
-      )
-    )
-      return;
-    setPresSending(true);
-    setPresResults([]);
-    setPresTotal(presidents.length);
-    try {
-      for (let i = 0; i < presidents.length; i += BATCH) {
-        const ids = presidents.slice(i, i + BATCH).map((p) => p.id);
-        const res = await fetch("/api/admin/president-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ids }),
-        });
-        const b = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          showToast(
-            b.error === "email_not_configured"
-              ? "Email isn't configured (Gmail)."
-              : "Sending stopped (server error).",
-            "warn",
-          );
-          break;
-        }
-        setPresResults((prev) => [...prev, ...((b.results ?? []) as SendResult[])]);
-      }
-    } finally {
-      setPresSending(false);
-    }
-  }
-
-  async function sendPresTest() {
-    const to = presTest.trim();
-    if (!to) return;
-    setPresTesting(true);
-    try {
-      const res = await fetch("/api/admin/president-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ test: to }),
-      });
-      const b = await res.json().catch(() => ({}));
-      showToast(
-        res.ok ? `Test briefing sent to ${to}` : `Test failed: ${b.detail || b.error || "error"}`,
-        res.ok ? "ok" : "warn",
-      );
-    } catch {
-      showToast("Test send failed.", "warn");
-    } finally {
-      setPresTesting(false);
     }
   }
 
@@ -707,7 +620,7 @@ export default function InvitationsPage() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr] lg:items-start">
         {/* send */}
         <Card>
           <CardContent className="p-6">
@@ -869,7 +782,7 @@ export default function InvitationsPage() {
           </CardContent>
         </Card>
 
-        {/* right column: fix email + export */}
+        {/* right column: reminder + fix email + export */}
         <div className="space-y-5">
           <Card>
             <CardContent className="p-6">
@@ -1001,45 +914,6 @@ export default function InvitationsPage() {
           </Card>
         </div>
       </div>
-
-      {/* block-president briefing */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
-              <ShieldCheck className="size-4 text-brand-orange" />
-              Brief block presidents · {presidents.length}
-            </h2>
-            <Button
-              onClick={briefPresidents}
-              disabled={presSending || presidents.length === 0 || !presReady}
-            >
-              {presSending ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Send />
-              )}
-              Email all {presidents.length} presidents
-            </Button>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Sends every block president a branded briefing on their role —
-            monitoring their block&apos;s attendance, following up with absent
-            blockmates, and helping with activation/invite issues — with a button
-            to their Block Oversight dashboard.
-          </p>
-          {!presReady && (
-            <p className="mt-3 flex items-center gap-2 text-sm font-medium text-brand-orange">
-              <TriangleAlert className="size-4" />
-              Email isn&apos;t configured yet (Gmail). Sending is disabled.
-            </p>
-          )}
-
-          {(presSending || presResults.length > 0) && (
-            <div className="mt-5 rounded-2xl border border-border bg-secondary/30 p-4">
-              <div className="flex items-center justify-between text-sm font-semibold">
-                <span>
-                  {presSending ? "Sending…" : "Send complete"}{" "}
                   {presResults.length}/{presTotal}
                 </span>
                 <span className="text-xs text-muted-foreground">

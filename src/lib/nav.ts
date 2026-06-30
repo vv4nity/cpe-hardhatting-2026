@@ -5,6 +5,7 @@ import {
   Map,
   QrCode,
   Send,
+  ShieldCheck,
   User,
   Users,
 } from "lucide-react";
@@ -37,6 +38,12 @@ export function navTabsFor(role: Role): NavTab[] {
       { href: "/admin/overview", label: "Overview", short: "Overview", icon: LayoutDashboard },
       { href: "/admin/seating", label: "Seating Map", short: "Seating", icon: Map },
       { href: "/admin/invitations", label: "Invitations", short: "Invites", icon: Send },
+      {
+        href: "/admin/expert-attendance",
+        label: "Expert Attendance",
+        short: "Expert",
+        icon: ShieldCheck,
+      },
     ];
   }
   if (role === "president") {
