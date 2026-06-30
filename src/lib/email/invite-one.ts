@@ -34,7 +34,10 @@ async function buildConfirmLink(
   if (res.error || !res.data?.properties?.hashed_token) {
     throw new Error(res.error?.message || "link generation failed");
   }
-  return `${origin}/auth/confirm?token_hash=${res.data.properties.hashed_token}&type=${type}&next=/activate`;
+  // Land on /activate (which renders a click-gated button) rather than hitting
+  // /auth/confirm directly — so email security scanners that pre-fetch the link
+  // can't consume the one-time token before the student clicks.
+  return `${origin}/activate?token_hash=${res.data.properties.hashed_token}&type=${type}`;
 }
 
 /** Invite a single directory row: generate link, send email, mark invited. */

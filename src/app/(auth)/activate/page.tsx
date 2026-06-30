@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Phase = "checking" | "invalid" | "form" | "done" | "closed";
+type Phase = "checking" | "start" | "invalid" | "form" | "done" | "closed";
 
 const STATUS_MSG: Record<string, string> = {
   not_found:
@@ -30,6 +30,9 @@ const STATUS_MSG: Record<string, string> = {
 export default function ActivatePage() {
   const [phase, setPhase] = useState<Phase>("checking");
   const [invitedEmail, setInvitedEmail] = useState("");
+  // one-time token carried in the email link (consumed only on button click)
+  const [confirmHref, setConfirmHref] = useState("");
+  const [confirming, setConfirming] = useState(false);
 
   const [surname, setSurname] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -52,8 +55,21 @@ export default function ActivatePage() {
       }
       const { data } = await supabase.auth.getUser();
       if (data.user) {
+        // the token was already verified (button clicked) — show the form
         setInvitedEmail(data.user.email ?? "");
         setPhase("form");
+        return;
+      }
+      // not signed in yet: if the email link carried a one-time token, show a
+      // click-gated button (so link scanners can't consume it on a prefetch)
+      const params = new URLSearchParams(window.location.search);
+      const th = params.get("token_hash");
+      const ty = params.get("type");
+      if (th && ty) {
+        setConfirmHref(
+          `/auth/confirm?token_hash=${encodeURIComponent(th)}&type=${encodeURIComponent(ty)}&next=/activate`,
+        );
+        setPhase("start");
       } else {
         setPhase("invalid");
       }
@@ -115,6 +131,33 @@ export default function ActivatePage() {
           <Loader2 className="size-4 animate-spin" />
           Checking your invitation…
         </div>
+      </AuthSplit>
+    );
+  }
+
+  if (phase === "start") {
+    return (
+      <AuthSplit>
+        <Heading sub="You're one tap away from claiming your seat.">
+          ACTIVATE YOUR SEAT
+        </Heading>
+        <p className="mt-4 text-sm text-muted-foreground">
+          Tap the button below to confirm your invitation, then set the password
+          you&apos;ll use to sign in.
+        </p>
+        <Button
+          size="lg"
+          className="mt-5 w-full"
+          disabled={confirming}
+          onClick={() => {
+            setConfirming(true);
+            window.location.href = confirmHref;
+          }}
+        >
+          {confirming ? <Loader2 className="size-4 animate-spin" /> : null}
+          Activate my account
+          <ArrowRight />
+        </Button>
       </AuthSplit>
     );
   }
