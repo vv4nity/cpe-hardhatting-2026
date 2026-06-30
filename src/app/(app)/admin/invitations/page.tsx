@@ -244,9 +244,10 @@ export default function InvitationsPage() {
     [recipients],
   );
 
-  async function sendInvites() {
-    if (!toSendList.length) {
-      showToast("No new invitations — everyone pending was already emailed.", "warn");
+  // shared batched sender used by both "Send invitations" and "Resend to all"
+  async function runSend(list: Recipient[]) {
+    if (!list.length) {
+      showToast("Nobody to send to right now.", "warn");
       return;
     }
     if (activationOpen === false) {
@@ -256,10 +257,10 @@ export default function InvitationsPage() {
     setSending(true);
     setSendResults([]);
     setResultSearch("");
-    setSendTotal(toSendList.length);
+    setSendTotal(list.length);
     try {
-      for (let i = 0; i < toSendList.length; i += BATCH) {
-        const ids = toSendList.slice(i, i + BATCH).map((r) => r.id);
+      for (let i = 0; i < list.length; i += BATCH) {
+        const ids = list.slice(i, i + BATCH).map((r) => r.id);
         const res = await fetch("/api/admin/invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -284,6 +285,32 @@ export default function InvitationsPage() {
       loadStats();
       loadRecipients();
     }
+  }
+
+  function sendInvites() {
+    if (!toSendList.length) {
+      showToast("No new invitations — everyone pending was already emailed.", "warn");
+      return;
+    }
+    runSend(toSendList);
+  }
+
+  // every not-yet-registered attendee with an email (invited or not)
+  const pendingAll = useMemo(
+    () => recipients.filter((r) => !r.registered && r.email),
+    [recipients],
+  );
+
+  function resendAll() {
+    if (!pendingAll.length) return;
+    if (
+      !window.confirm(
+        `Resend the invitation to all ${pendingAll.length} attendees who haven't registered yet? Already-registered students are skipped.`,
+      )
+    )
+      return;
+    setDrill(null);
+    runSend(pendingAll);
   }
 
   async function resendOne(id: string) {
@@ -839,14 +866,30 @@ export default function InvitationsPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={drillSearch}
-              onChange={(e) => setDrillSearch(e.target.value)}
-              placeholder="Search name, email or seat…"
-              className="pl-8"
-            />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={drillSearch}
+                onChange={(e) => setDrillSearch(e.target.value)}
+                placeholder="Search name, email or seat…"
+                className="pl-8"
+              />
+            </div>
+            {drill === "pending" && pendingAll.length > 0 && (
+              <Button
+                onClick={resendAll}
+                disabled={sending || activationOpen === false}
+                className="shrink-0"
+              >
+                {sending ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RotateCw className="size-4" />
+                )}
+                Resend to all {pendingAll.length}
+              </Button>
+            )}
           </div>
 
           <div className="max-h-[55vh] space-y-1.5 overflow-y-auto pr-1">
