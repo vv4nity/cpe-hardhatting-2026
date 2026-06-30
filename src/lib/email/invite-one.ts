@@ -14,6 +14,7 @@ export interface InviteResult {
   email: string;
   status: "sent" | "failed";
   reason?: string;
+  account?: "primary" | "backup";
 }
 
 /**
@@ -51,12 +52,12 @@ export async function inviteOne(
   if (!email) return { ...base, status: "failed", reason: "no email on file" };
   try {
     const link = await buildConfirmLink(admin, email, origin);
-    await sendInviteEmail(email, row.full_name, link);
+    const { account } = await sendInviteEmail(email, row.full_name, link);
     await admin
       .from("directory")
       .update({ invited_at: new Date().toISOString() })
       .eq("id", row.id);
-    return { ...base, status: "sent" };
+    return { ...base, status: "sent", account };
   } catch (e) {
     return {
       ...base,

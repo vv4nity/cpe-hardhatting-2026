@@ -52,6 +52,7 @@ interface SendResult {
   email: string;
   status: "sent" | "failed";
   reason?: string;
+  account?: "primary" | "backup";
 }
 interface EmailRequest {
   id: string;
@@ -363,6 +364,7 @@ export default function InvitationsPage() {
 
   const sentCount = sendResults.filter((r) => r.status === "sent").length;
   const failCount = sendResults.filter((r) => r.status === "failed").length;
+  const backupCount = sendResults.filter((r) => r.account === "backup").length;
   const done = sendResults.length;
   const visibleResults = sendResults.filter(
     (r) =>
@@ -629,6 +631,12 @@ export default function InvitationsPage() {
                     {failCount > 0 && (
                       <span className="text-brand-red"> · {failCount} failed</span>
                     )}
+                    {backupCount > 0 && (
+                      <span className="text-brand-orange">
+                        {" "}
+                        · {backupCount} via backup
+                      </span>
+                    )}
                   </span>
                 </div>
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
@@ -667,6 +675,11 @@ export default function InvitationsPage() {
                       <span className="flex-1 truncate text-muted-foreground">
                         {r.email}
                       </span>
+                      {r.account === "backup" && r.status === "sent" && (
+                        <span className="shrink-0 rounded-full bg-brand-orange/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-orange">
+                          backup
+                        </span>
+                      )}
                       {r.status === "failed" && (
                         <span className="shrink-0 truncate text-brand-red">
                           {r.reason}

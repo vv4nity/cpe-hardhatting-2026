@@ -176,7 +176,8 @@ function inviteHtml(name: string, link: string): string {
 </html>`;
 }
 
-/** Send one invitation email via Gmail SMTP (with backup-account failover). */
+/** Send one invitation email via Gmail SMTP (with backup-account failover).
+ * Returns which Gmail account actually delivered it. */
 export async function sendInviteEmail(to: string, name: string, link: string) {
   const publicDir = path.join(process.cwd(), "public");
   const html = inviteHtml(name, link);
@@ -185,7 +186,7 @@ export async function sendInviteEmail(to: string, name: string, link: string) {
     path: path.join(publicDir, a.file),
     cid: a.cid,
   }));
-  await sendWithFallback((from) => ({
+  return sendWithFallback((from) => ({
     from,
     to,
     subject: SUBJECT,
