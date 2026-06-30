@@ -1,7 +1,9 @@
 "use client";
 
 import { RefreshCw } from "lucide-react";
+import { useState } from "react";
 import { useApp } from "@/lib/store";
+import { refreshSupabaseData } from "@/lib/supabase/refresh";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,7 +13,14 @@ import { MySeatCard } from "@/components/seating/my-seat-card";
 
 export default function SeatingPage() {
   const user = useApp((s) => s.user)!;
-  const refresh = useApp((s) => s.refresh);
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    await refreshSupabaseData();
+    setRefreshing(false);
+  }
 
   const presScope =
     user.role === "president" ? user.presidentBlock || null : null;
@@ -26,8 +35,8 @@ export default function SeatingPage() {
             : "View-only. Your seat is highlighted — refresh to simulate live check-ins."
         }
         actions={
-          <Button variant="outline" onClick={refresh}>
-            <RefreshCw />
+          <Button variant="outline" onClick={refresh} disabled={refreshing}>
+            <RefreshCw className={refreshing ? "animate-spin" : ""} />
             Refresh
           </Button>
         }

@@ -194,32 +194,9 @@ export const useApp = create<AppState>()(
         set((s) => ({ cellSize: Math.max(14, Math.min(42, s.cellSize + d)) })),
 
       refresh: () => {
-        const data = get().data;
-        const pending = data.attendees.filter((a) => a.status === "assigned");
-        const n = Math.min(pending.length, 3 + Math.floor(Math.random() * 5));
-        const flipped = new Set<string>();
-        for (let i = 0; i < n && flipped.size < pending.length; i++) {
-          const a = pending[Math.floor(Math.random() * pending.length)];
-          flipped.add(a.id);
-        }
-        const attendees = data.attendees.map((a) => {
-          if (a.status === "assigned" && flipped.has(a.id)) {
-            return {
-              ...a,
-              status: "present" as SeatStatus,
-              checkIn: 420 + Math.floor(Math.random() * 300),
-              scanner:
-                data.scanners[Math.floor(Math.random() * data.scanners.length)],
-            };
-          }
-          return a;
-        });
-        const attMap = Object.fromEntries(attendees.map((a) => [a.id, a]));
-        set((s) => ({
-          data: { ...data, attendees, attMap },
-          dataVersion: s.dataVersion + 1,
-        }));
-        get().showToast("Live data refreshed", "ok");
+        void import("@/lib/supabase/refresh")
+          .then(({ refreshSupabaseData }) => refreshSupabaseData())
+          .catch(() => {});
       },
 
       startEdit: () => set({ profileEdit: true }),

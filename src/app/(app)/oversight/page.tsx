@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { useApp } from "@/lib/store";
+import { refreshSupabaseData } from "@/lib/supabase/refresh";
 import { STATUS } from "@/lib/status";
 import { PRESIDENT_SECTION } from "@/lib/sections";
 import { blockSummary, computeRoster } from "@/lib/views";
@@ -15,8 +17,15 @@ export default function OversightPage() {
   const user = useApp((s) => s.user)!;
   const data = useApp((s) => s.data);
   useApp((s) => s.dataVersion);
-  const refresh = useApp((s) => s.refresh);
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function refresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    await refreshSupabaseData();
+    setRefreshing(false);
+  }
 
   // president-only screen
   useEffect(() => {
@@ -41,8 +50,8 @@ export default function OversightPage() {
         title={`BLOCK OVERSIGHT · ${blockId}`}
         subtitle="Live attendance for the block you supervise."
         actions={
-          <Button variant="outline" onClick={refresh}>
-            <RefreshCw />
+          <Button variant="outline" onClick={refresh} disabled={refreshing}>
+            <RefreshCw className={refreshing ? "animate-spin" : ""} />
             Refresh
           </Button>
         }

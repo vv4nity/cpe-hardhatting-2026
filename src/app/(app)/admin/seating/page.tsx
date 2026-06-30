@@ -1,7 +1,9 @@
 "use client";
 
 import { Minus, Plus, RefreshCw, Search } from "lucide-react";
+import { useState } from "react";
 import { useApp } from "@/lib/store";
+import { refreshSupabaseData } from "@/lib/supabase/refresh";
 import { BLOCK_OPTIONS, STATUS_OPTIONS } from "@/lib/views";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,7 @@ import { SeatMap, SeatLegend } from "@/components/seating/seat-map";
 import { SelectedSeatPanel } from "@/components/seating/selected-seat";
 
 export default function AdminSeatingPage() {
+  const [refreshing, setRefreshing] = useState(false);
   const seatSearch = useApp((s) => s.seatSearch);
   const setSeatSearch = useApp((s) => s.setSeatSearch);
   const fBlock = useApp((s) => s.fBlock);
@@ -26,7 +29,13 @@ export default function AdminSeatingPage() {
   const setFStatus = useApp((s) => s.setFStatus);
   const cellSize = useApp((s) => s.cellSize);
   const zoom = useApp((s) => s.zoom);
-  const refresh = useApp((s) => s.refresh);
+
+  async function refresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    await refreshSupabaseData();
+    setRefreshing(false);
+  }
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -34,8 +43,8 @@ export default function AdminSeatingPage() {
         title="VENUE SEATING MAP"
         subtitle="500 seats across Blocks A–E. Search, filter and inspect any seat."
         actions={
-          <Button variant="outline" onClick={refresh}>
-            <RefreshCw /> Refresh
+          <Button variant="outline" onClick={refresh} disabled={refreshing}>
+            <RefreshCw className={refreshing ? "animate-spin" : ""} /> Refresh
           </Button>
         }
       />
