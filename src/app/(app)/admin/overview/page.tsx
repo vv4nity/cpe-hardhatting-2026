@@ -484,12 +484,7 @@ function CheckinChart({
                 <circle cx="0" cy="0" r="9" fill="#FFBF00" opacity="0.22" />
                 <rect x="-2" y="-2" width="4" height="4" fill="#FD8602" rx="0.5" />
               </g>
-              <text x="50" y="64" textAnchor="middle" fill="#6B6B6B" style={{ fontSize: "3.8px", fontWeight: 600 }}>
-                No check-ins yet
-              </text>
-              <text x="50" y="72" textAnchor="middle" fill="#A8A29E" style={{ fontSize: "3px" }}>
-                Activity will appear here as attendees begin checking in.
-              </text>
+              {/* (Removed textual empty state per request) */}
             </g>
           )}
         </svg>
