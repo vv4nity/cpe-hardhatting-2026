@@ -35,6 +35,10 @@ export default function NoInvitePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // set when the email they entered was already the correct one on file
+  const [alreadyCorrect, setAlreadyCorrect] = useState<{
+    resent: boolean;
+  } | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -61,12 +65,51 @@ export default function NoInvitePage() {
         setDone(true);
         return;
       }
+      if (b.status === "already_correct") {
+        setAlreadyCorrect({ resent: !!b.resent });
+        return;
+      }
       setError(MSG[b.status ?? b.error ?? ""] ?? "Something went wrong. Please try again.");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (alreadyCorrect) {
+    return (
+      <AuthSplit>
+        <div className="grid size-14 place-items-center rounded-2xl bg-brand-green/12 text-brand-green">
+          <CheckCircle2 className="size-7" />
+        </div>
+        <h1 className="mt-4 font-display text-3xl leading-tight tracking-wide">
+          YOUR EMAIL IS ALREADY CORRECT
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Good news —{" "}
+          <span className="font-semibold text-foreground">{email}</span> is
+          already the email on your record, so there&apos;s nothing to change.
+          {alreadyCorrect.resent ? (
+            <>
+              {" "}
+              We&apos;ve just <span className="font-semibold text-foreground">re-sent your invitation</span>{" "}
+              — please check your inbox and spam folder. Still nothing? Contact
+              an organizer.
+            </>
+          ) : (
+            <>
+              {" "}
+              Please check your inbox and spam folder. If you still can&apos;t
+              find your invitation, contact an organizer.
+            </>
+          )}
+        </p>
+        <Button asChild variant="outline" size="lg" className="mt-5 w-full">
+          <Link href="/signin">Go to sign in</Link>
+        </Button>
+      </AuthSplit>
+    );
   }
 
   if (done) {

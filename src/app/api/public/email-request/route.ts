@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
-import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
+import {
+  createAdminClient,
+  isAdminConfigured,
+  isEmailConfigured,
+} from "@/lib/supabase/admin";
 import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { inviteOne } from "@/lib/email/invite-one";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
@@ -39,7 +45,7 @@ export async function POST(request: Request) {
   // match the roster (case-insensitive; surname+first+block is unique)
   const { data: row } = await admin
     .from("directory")
-    .select("id, claimed_by")
+    .select("id, full_name, email, claimed_by")
     .ilike("surname", surname)
     .ilike("first_name", firstName)
     .eq("block", block)
@@ -47,6 +53,26 @@ export async function POST(request: Request) {
 
   if (!row) return NextResponse.json({ status: "not_found" });
   if (row.claimed_by) return NextResponse.json({ status: "already_registered" });
+
+  // the email they entered is ALREADY the one on file — nothing to change.
+  // their real problem is "I never got my invite", so just re-send it.
+  if ((row.email ?? "").trim().toLowerCase() === email) {
+    const { data: setting } = await admin
+      .from("app_settings")
+      .select("value")
+      .eq("key", "activation_open")
+      .maybeSingle();
+    const paused = !!setting && setting.value !== "true";
+    if (paused || !isEmailConfigured) {
+      return NextResponse.json({ status: "already_correct", resent: false });
+    }
+    const origin = new URL(request.url).origin;
+    const result = await inviteOne(admin, row, origin);
+    return NextResponse.json({
+      status: "already_correct",
+      resent: result.status === "sent",
+    });
+  }
 
   // replace any existing pending request for this student
   await admin
