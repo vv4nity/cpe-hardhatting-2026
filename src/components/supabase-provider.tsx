@@ -34,6 +34,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const channelRef = useRef<any>(null);
   const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured) return;
@@ -135,6 +136,15 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             },
           )
           .subscribe();
+
+        // safety net: even if the realtime socket silently drops (sleep, flaky
+        // venue Wi-Fi, backgrounded tab), re-pull every 30s so event-day
+        // dashboards are never more than ~30s stale.
+        if (!pollTimer.current) {
+          pollTimer.current = setInterval(() => {
+            if (document.visibilityState === "visible") refreshStaffData();
+          }, 30_000);
+        }
       }
     }
 
@@ -160,6 +170,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       active = false;
       sub.subscription.unsubscribe();
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      if (pollTimer.current) {
+        clearInterval(pollTimer.current);
+        pollTimer.current = null;
+      }
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
