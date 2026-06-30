@@ -158,9 +158,6 @@ export default function OverviewPage() {
                     total check-ins
                   </span>
                 </p>
-                <p className="mt-2 text-xs uppercase tracking-wide text-muted-foreground">
-                  Live refresh every 30 minutes for sharper arrival trends.
-                </p>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-amber/15 px-3 py-1 text-xs font-bold text-brand-ink">
                 <span className="size-1.5 rounded-full bg-brand-orange" />
@@ -432,13 +429,6 @@ function CheckinChart({
                 key={p.interval}
                 className="group flex h-full flex-1 flex-col items-center justify-end"
               >
-                <span
-                  className={`mb-1.5 text-xs font-bold tabular-nums transition-colors ${
-                    isPeak ? "text-brand-orange" : "text-muted-foreground"
-                  }`}
-                >
-                  {p.value}
-                </span>
                 <div
                   className="w-full max-w-[44px] rounded-t-lg shadow-sm transition-all duration-300 group-hover:brightness-105"
                   style={{
