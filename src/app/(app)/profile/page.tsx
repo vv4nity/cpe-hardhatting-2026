@@ -40,19 +40,19 @@ export default function ProfilePage() {
         </Card>
 
         <Card>
-          <CardContent className="space-y-6 p-6 sm:p-7">
+          <CardContent className="space-y-5 p-6">
             <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">
               Account details
             </h2>
 
-            <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <ReadOnly label="Full name" value={user.name} full />
               <ReadOnly label="Email" value={user.email || "—"} full />
               <ReadOnly label="Block" value={blockId} />
               <ReadOnly label="Seat" value={user.seat || "—"} />
             </div>
 
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               These details come from the official class directory and can&apos;t
               be edited here. If something looks wrong, contact an organizer.
             </p>
@@ -74,11 +74,11 @@ function ReadOnly({
 }) {
   return (
     <div className={"space-y-2" + (full ? " sm:col-span-2" : "")}>
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </Label>
-      <div className="flex h-12 items-center overflow-hidden rounded-xl border border-border bg-secondary/40 px-4">
-        <span className="truncate text-[15px] font-semibold">{value}</span>
+      <Label>{label}</Label>
+      <div className="flex h-11 items-center overflow-hidden rounded-xl border border-border bg-secondary/40 pl-3.5 pr-4">
+        <span className="block min-w-0 flex-1 truncate text-[15px] font-semibold">
+          {value}
+        </span>
       </div>
     </div>
   );
