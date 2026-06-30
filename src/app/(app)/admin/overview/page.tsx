@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ChevronRight, Download, Map, RefreshCw, Send } from "lucide-react";
+import {
+  ChevronRight,
+  Download,
+  Flag,
+  Loader2,
+  Map,
+  RefreshCw,
+  Send,
+  Undo2,
+} from "lucide-react";
 import { useApp } from "@/lib/store";
 import { refreshStaffData } from "@/lib/supabase/refresh";
 import {
@@ -25,6 +34,7 @@ export default function OverviewPage() {
 
   const [openSection, setOpenSection] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
 
   async function refresh() {
     setRefreshing(true);
@@ -33,11 +43,52 @@ export default function OverviewPage() {
     showToast("Attendance refreshed", "ok");
   }
 
+  async function finalize(action: "finalize" | "undo") {
+    const stillAssigned = data.attendees.filter(
+      (a) => a.status === "assigned",
+    ).length;
+    if (action === "finalize") {
+      if (
+        !window.confirm(
+          `End the event and mark all ${stillAssigned} attendees who haven't checked in as NO-SHOW?\n\nLate arrivals can still be scanned in afterward (they'll flip back to Present).`,
+        )
+      )
+        return;
+    } else if (!window.confirm("Revert all no-shows back to “not checked in”?")) {
+      return;
+    }
+    setFinalizing(true);
+    try {
+      const res = await fetch("/api/admin/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const b = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showToast("Couldn't update — please try again.", "warn");
+        return;
+      }
+      await refreshStaffData();
+      showToast(
+        action === "finalize"
+          ? `Event finalized · ${b.count} marked no-show`
+          : `Reverted ${b.count} back to not-checked-in`,
+        "ok",
+      );
+    } finally {
+      setFinalizing(false);
+    }
+  }
+
   const m = computeMetrics(data);
   const chart = computeCheckinChart(data);
   const activity = computeActivity(data);
   const blocks = computeBlockTable(data);
   const peak = chart.points.reduce((a, b) => (b.value > a.value ? b : a));
+  const stillAssigned = data.attendees.filter(
+    (a) => a.status === "assigned",
+  ).length;
 
   const metrics = [
     { label: "Total registered", value: m.total, sub: `of ${data.seats.length} seats`, tone: "plain" },
@@ -251,6 +302,45 @@ export default function OverviewPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* end-of-event control */}
+      <Card className="border-brand-orange/30 bg-brand-orange/5">
+        <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-brand-orange">
+              <Flag className="size-4" />
+              End of event
+            </h2>
+            <p className="mt-1 max-w-xl text-xs text-muted-foreground">
+              When the doors close, mark everyone who never checked in as a
+              no-show — this locks in absences for your report.{" "}
+              <span className="font-semibold text-foreground">
+                {stillAssigned} not checked in
+              </span>{" "}
+              · {m.noShow} no-show. Late arrivals scanned after this still count
+              as present.
+            </p>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            {m.noShow > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => finalize("undo")}
+                disabled={finalizing}
+              >
+                <Undo2 /> Undo
+              </Button>
+            )}
+            <Button
+              onClick={() => finalize("finalize")}
+              disabled={finalizing || stillAssigned === 0}
+            >
+              {finalizing ? <Loader2 className="animate-spin" /> : <Flag />}
+              Mark {stillAssigned} as no-show
+            </Button>
           </div>
         </CardContent>
       </Card>
