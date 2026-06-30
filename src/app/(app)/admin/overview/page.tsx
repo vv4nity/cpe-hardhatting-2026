@@ -392,16 +392,17 @@ function CheckinChart({
   const grid = [1, 0.75, 0.5, 0.25, 0];
   const max = chart.max;
   const hasData = chart.points.some((p) => p.value > 0);
+  const yLabels = max > 0 ? grid.map((g) => Math.round(max * g)) : [0, 0, 0, 0, 0];
 
   return (
     <div className="mt-6">
       <div className="relative h-52">
         {/* gridlines + y labels */}
         <div className="absolute inset-0 flex flex-col justify-between">
-          {grid.map((g) => (
-            <div key={g} className="flex items-center gap-2">
+          {yLabels.map((label, index) => (
+            <div key={index} className="flex items-center gap-2">
               <span className="w-6 shrink-0 text-right text-[10px] tabular-nums text-muted-foreground/60">
-                {Math.round(max * g)}
+                {label}
               </span>
               <span className="h-px flex-1 bg-border/70" />
             </div>
