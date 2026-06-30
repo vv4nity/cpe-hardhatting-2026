@@ -14,6 +14,15 @@ import { initialsOf } from "@/lib/format";
 import { refreshStaffData } from "@/lib/supabase/refresh";
 import type { Role, SeatStatus, SessionUser } from "@/lib/types";
 
+type MineRow = {
+  full_name: string;
+  block: string;
+  seat: string;
+  status: string;
+  checked_in_at: string | null;
+  gate: string | null;
+};
+
 /**
  * Bridges the real Supabase session into the app store. When a user is signed
  * in, it loads their profile + the seat data (role-aware: staff see names,
@@ -46,6 +55,10 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       const isStaff = role === "admin" || role === "scanner";
       let rows: RawSeatRow[] = [];
       let myStatus: SeatStatus = (profile.status as SeatStatus) ?? "assigned";
+      // the attendee's live directory record — the source of truth for their
+      // name/seat/block (the `profiles` row is only a snapshot from activation,
+      // so reading directory here keeps the account + QR pass current on refresh)
+      let mine: MineRow | null = null;
 
       if (isStaff) {
         const { data } = await supabase
@@ -62,7 +75,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
           gate: d.gate as string,
         }));
       } else {
-        const [{ data: layout }, { data: mine }] = await Promise.all([
+        const [{ data: layout }, { data: mineData }] = await Promise.all([
           supabase.from("seat_layout").select("seat, block, status"),
           supabase
             .from("directory")
@@ -70,6 +83,7 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
             .eq("claimed_by", uid)
             .maybeSingle(),
         ]);
+        mine = (mineData as MineRow | null) ?? null;
         if (mine?.status) myStatus = mine.status as SeatStatus;
         rows = (layout ?? [])
           .filter((s) => s.seat)
@@ -90,16 +104,19 @@ export function SupabaseProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!active) return;
+      // prefer the live directory record for attendees; fall back to the profile
+      const name = (mine?.full_name as string) ?? profile.full_name;
+      const block = (mine?.block as string) ?? profile.block ?? undefined;
       const user: SessionUser = {
         id: uid,
         role,
-        name: profile.full_name,
+        name,
         email: profile.email ?? session.user.email ?? "",
-        initials: initialsOf(profile.full_name),
-        block: profile.block ?? undefined,
-        seat: profile.seat ?? undefined,
+        initials: initialsOf(name),
+        block,
+        seat: (mine?.seat as string) ?? profile.seat ?? undefined,
         status: myStatus,
-        presidentBlock: role === "president" ? profile.block : undefined,
+        presidentBlock: role === "president" ? block : undefined,
       };
       realRef.current = true;
       useApp.setState({ user, data: buildDatasetFromRows(rows) });
