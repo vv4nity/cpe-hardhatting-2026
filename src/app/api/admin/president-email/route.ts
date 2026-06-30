@@ -16,6 +16,7 @@ interface PresRow {
   id: string;
   full_name: string;
   email: string | null;
+  block: string | null;
 }
 
 /** GET — block presidents (with email) for the admin briefing card. */
@@ -28,7 +29,7 @@ export async function GET() {
   const admin = createAdminClient();
   const { data } = await admin
     .from("directory")
-    .select("id, full_name, email")
+    .select("id, full_name, email, block")
     .eq("is_president", true)
     .not("email", "is", null)
     .order("block");
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
 
   if (body.test && body.test.trim()) {
     try {
-      await sendPresidentEmail(body.test.trim(), "Dela Cruz, Juan", link);
+      await sendPresidentEmail(body.test.trim(), "Dela Cruz, Juan", link, "BSCPE 1-2");
       return NextResponse.json({ sent: 1, failed: 0, test: true });
     } catch (e) {
       return NextResponse.json(
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
   const { data } = await admin
     .from("directory")
-    .select("id, full_name, email")
+    .select("id, full_name, email, block")
     .in("id", body.ids)
     .eq("is_president", true);
   const rows = (data ?? []) as PresRow[];
@@ -107,7 +108,12 @@ export async function POST(request: Request) {
       continue;
     }
     try {
-      const { account } = await sendPresidentEmail(email, row.full_name, link);
+      const { account } = await sendPresidentEmail(
+        email,
+        row.full_name,
+        link,
+        row.block ?? "",
+      );
       results.push({
         id: row.id,
         name: row.full_name,

@@ -42,8 +42,9 @@ function dutyRow(n: number, title: string, body: string, last: boolean) {
   </tr>`;
 }
 
-function presidentHtml(name: string, link: string): string {
+function presidentHtml(name: string, link: string, block: string): string {
   const first = firstNameOf(name) || "there";
+  const blockLabel = block ? ` of <b>${block}</b>` : "";
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -80,7 +81,7 @@ function presidentHtml(name: string, link: string): string {
 
           <!-- body -->
           <tr><td class="pad" style="padding:18px 26px 0;">
-            <p style="margin:0 0 8px;font-size:17px;line-height:1.5;color:#1a1712;">Hi ${first}, you're a <b>block president</b> for the ceremony.</p>
+            <p style="margin:0 0 8px;font-size:17px;line-height:1.5;color:#1a1712;">Hi ${first}, you're the <b>block president</b>${blockLabel} for the ceremony.</p>
             <p style="margin:0;font-size:15.5px;line-height:1.7;color:#6b6357;">
               Beyond your own seat, you have a special role: helping your block show up — and be accounted for — on event day. Here's what we'll count on you for.
             </p>
@@ -139,9 +140,14 @@ function presidentHtml(name: string, link: string): string {
 }
 
 /** Send one block-president briefing email (with backup-account failover). */
-export async function sendPresidentEmail(to: string, name: string, link: string) {
+export async function sendPresidentEmail(
+  to: string,
+  name: string,
+  link: string,
+  block: string,
+) {
   const publicDir = path.join(process.cwd(), "public");
-  const html = presidentHtml(name, link);
+  const html = presidentHtml(name, link, block);
   const attachments = ASSETS.map((a) => ({
     filename: a.file.split("/").pop()!,
     path: path.join(publicDir, a.file),
