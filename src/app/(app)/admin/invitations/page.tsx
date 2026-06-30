@@ -35,6 +35,7 @@ interface Stats {
   registered: number;
   invited: number;
   pending: number;
+  toSend: number;
 }
 interface Recipient {
   id: string;
@@ -208,14 +209,16 @@ export default function InvitationsPage() {
     }
   }
 
-  const pendingList = useMemo(
-    () => recipients.filter((r) => !r.registered && r.email),
+  // bulk "Send" targets only those never emailed yet — already-invited students
+  // are skipped (resend them individually from the Pending list).
+  const toSendList = useMemo(
+    () => recipients.filter((r) => !r.registered && !r.invited && r.email),
     [recipients],
   );
 
   async function sendInvites() {
-    if (!pendingList.length) {
-      showToast("No pending invitations.", "warn");
+    if (!toSendList.length) {
+      showToast("No new invitations — everyone pending was already emailed.", "warn");
       return;
     }
     if (activationOpen === false) {
@@ -225,10 +228,10 @@ export default function InvitationsPage() {
     setSending(true);
     setSendResults([]);
     setResultSearch("");
-    setSendTotal(pendingList.length);
+    setSendTotal(toSendList.length);
     try {
-      for (let i = 0; i < pendingList.length; i += BATCH) {
-        const ids = pendingList.slice(i, i + BATCH).map((r) => r.id);
+      for (let i = 0; i < toSendList.length; i += BATCH) {
+        const ids = toSendList.slice(i, i + BATCH).map((r) => r.id);
         const res = await fetch("/api/admin/invite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -516,10 +519,28 @@ export default function InvitationsPage() {
               Send invitations
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Emails every pending student a one-time activation link, in small
-              batches with a live status below. Already-registered students are
-              skipped, so it&apos;s safe to run again.
+              Emails a one-time activation link to students who haven&apos;t been
+              invited yet, in small batches with a live status below.
+              Already-invited and already-registered students are skipped — so
+              it&apos;s safe to run again, and each run only sends to new people.
             </p>
+            {stats && stats.pending - stats.toSend > 0 && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {stats.pending - stats.toSend} already invited and awaiting
+                registration — resend those individually from the{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDrill("pending");
+                    setDrillSearch("");
+                  }}
+                  className="font-semibold text-brand-orange underline-offset-2 hover:underline"
+                >
+                  Pending list
+                </button>
+                .
+              </p>
+            )}
 
             {loadErr && (
               <p className="mt-4 flex items-center gap-2 text-sm font-medium text-brand-red">
@@ -541,16 +562,16 @@ export default function InvitationsPage() {
               disabled={
                 sending ||
                 !stats ||
-                stats.pending === 0 ||
+                stats.toSend === 0 ||
                 !emailReady ||
                 !!loadErr ||
                 activationOpen === false
               }
             >
               {sending ? <Loader2 className="size-4 animate-spin" /> : <Send />}
-              {stats && stats.pending > 0
-                ? `Send to ${stats.pending} pending`
-                : "No pending invitations"}
+              {stats && stats.toSend > 0
+                ? `Send to ${stats.toSend} not yet invited`
+                : "No new invitations to send"}
             </Button>
 
             {/* live results */}

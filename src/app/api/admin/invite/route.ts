@@ -29,7 +29,10 @@ async function loadStats(admin: ReturnType<typeof createAdminClient>) {
     total: withEmail.length,
     registered: rows.filter((r) => r.claimed_by).length,
     invited: rows.filter((r) => r.invited_at).length,
+    // not registered yet (the full backlog)
     pending: withEmail.filter((r) => !r.claimed_by).length,
+    // not registered AND never emailed — what a bulk "Send" should target
+    toSend: withEmail.filter((r) => !r.claimed_by && !r.invited_at).length,
   };
 }
 
