@@ -82,12 +82,13 @@ export function computeCheckinChart(data: Dataset): {
       if (buckets[interval] != null) buckets[interval]++;
     }
   });
-  const max = Math.max(1, ...Object.values(buckets));
+  const max = Math.max(...Object.values(buckets));
+  const hasData = max > 0;
   const points: ChartPoint[] = CHART_INTERVALS.map((t) => ({
     interval: t,
     label: minutesToTime(t),
     value: buckets[t],
-    ratio: buckets[t] / max,
+    ratio: hasData ? buckets[t] / max : 0,
   }));
 
   const pad = 6;
@@ -97,13 +98,48 @@ export function computeCheckinChart(data: Dataset): {
     const y = 92 - p.ratio * 74;
     return { x, y };
   });
-  const linePath = coords
-    .map((c, i) => `${i === 0 ? "M" : "L"} ${c.x.toFixed(2)} ${c.y.toFixed(2)}`)
-    .join(" ");
-  const areaPath =
-    `M ${coords[0].x.toFixed(2)} 100 ` +
-    coords.map((c) => `L ${c.x.toFixed(2)} ${c.y.toFixed(2)}`).join(" ") +
-    ` L ${coords[n - 1].x.toFixed(2)} 100 Z`;
+
+  function smoothPathFromCoords(coords: { x: number; y: number }[]) {
+    if (coords.length < 2) {
+      const point = coords[0];
+      return `M ${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
+    }
+
+    const dx: number[] = [];
+    const dy: number[] = [];
+    const slopes: number[] = [];
+    for (let i = 0; i < coords.length - 1; i++) {
+      dx[i] = coords[i + 1].x - coords[i].x;
+      dy[i] = coords[i + 1].y - coords[i].y;
+      slopes[i] = dy[i] / dx[i];
+    }
+
+    const tangents: number[] = new Array(coords.length);
+    tangents[0] = slopes[0];
+    tangents[coords.length - 1] = slopes[slopes.length - 1];
+    for (let i = 1; i < coords.length - 1; i++) {
+      tangents[i] = slopes[i - 1] * slopes[i] <= 0 ? 0 : (slopes[i - 1] + slopes[i]) / 2;
+    }
+
+    let path = `M ${coords[0].x.toFixed(2)} ${coords[0].y.toFixed(2)}`;
+    for (let i = 0; i < coords.length - 1; i++) {
+      const start = coords[i];
+      const end = coords[i + 1];
+      const slopeStart = tangents[i];
+      const slopeEnd = tangents[i + 1];
+      const cp1x = start.x + dx[i] / 3;
+      const cp1y = start.y + slopeStart * (dx[i] / 3);
+      const cp2x = end.x - dx[i] / 3;
+      const cp2y = end.y - slopeEnd * (dx[i] / 3);
+      path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${end.x.toFixed(2)} ${end.y.toFixed(2)}`;
+    }
+    return path;
+  }
+
+  const linePath = hasData ? smoothPathFromCoords(coords) : "";
+  const areaPath = hasData
+    ? `${linePath} L ${coords[n - 1].x.toFixed(2)} 100 L ${coords[0].x.toFixed(2)} 100 Z`
+    : "";
 
   return { points, max, areaPath, linePath };
 }
