@@ -32,6 +32,7 @@ export function ExpertAttendanceCard() {
   const [presTest, setPresTest] = useState("");
   const [presTesting, setPresTesting] = useState(false);
   const [presSentAt, setPresSentAt] = useState<string | null>(null);
+  const [presSent, setPresSent] = useState(false);
 
   const loadPresidents = useCallback(async () => {
     try {
@@ -48,18 +49,29 @@ export function ExpertAttendanceCard() {
 
   useEffect(() => {
     loadPresidents();
-    const saved = window.localStorage.getItem("presidents-brief-sent-at");
-    if (saved) {
-      setPresSentAt(saved);
+    const savedAt = window.localStorage.getItem("presidents-brief-sent-at");
+    const savedSent = window.localStorage.getItem("presidents-brief-sent");
+    if (savedAt) {
+      setPresSentAt(savedAt);
+    }
+    if (savedSent === "true") {
+      setPresSent(true);
     }
   }, [loadPresidents]);
 
   async function briefPresidents() {
     if (!presidents.length) return;
     setPresSending(true);
+    setPresSent(true);
     setPresResults([]);
     setPresTotal(presidents.length);
     try {
+      const now = new Date();
+      const timestamp = now.toLocaleString();
+      setPresSentAt(timestamp);
+      window.localStorage.setItem("presidents-brief-sent-at", timestamp);
+      window.localStorage.setItem("presidents-brief-sent", "true");
+
       for (let i = 0; i < presidents.length; i += BATCH) {
         const ids = presidents.slice(i, i + BATCH).map((p) => p.id);
         const res = await fetch("/api/admin/president-email", {
@@ -71,11 +83,6 @@ export function ExpertAttendanceCard() {
         if (!res.ok) break;
         setPresResults((prev) => [...prev, ...((b.results ?? []) as SendResult[])]);
       }
-      // Set timestamp when send completes
-      const now = new Date();
-      const timestamp = now.toLocaleString();
-      setPresSentAt(timestamp);
-      window.localStorage.setItem("presidents-brief-sent-at", timestamp);
     } finally {
       setPresSending(false);
     }
