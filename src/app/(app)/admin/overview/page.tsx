@@ -427,21 +427,23 @@ function CheckinChart({
             return (
               <div
                 key={p.interval}
-                className="group relative flex h-full flex-1 flex-col items-center justify-end"
+                className="group flex h-full flex-1 flex-col items-center justify-end"
               >
-                <span className="pointer-events-none absolute left-1/2 bottom-full -translate-x-1/2 translate-y-1 rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-brand-ink shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  {p.value}
-                </span>
-                <div
-                  className="w-full max-w-[44px] rounded-t-lg shadow-sm transition-all duration-300 group-hover:brightness-105"
-                  style={{
-                    height: `${Math.max(3, p.ratio * 100)}%`,
-                    background: isPeak
-                      ? "linear-gradient(180deg,#FD8602,#e0760a)"
-                      : "linear-gradient(180deg,#FFCB2E,#FFBF00)",
-                  }}
-                  title={`${p.value} check-in${p.value === 1 ? "" : "s"}`}
-                />
+                <div className="relative w-full max-w-[44px]">
+                  <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-brand-ink shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                    {p.value}
+                  </span>
+                  <div
+                    className="rounded-t-lg shadow-sm transition-all duration-300 group-hover:brightness-105"
+                    style={{
+                      height: `${Math.max(3, p.ratio * 100)}%`,
+                      background: isPeak
+                        ? "linear-gradient(180deg,#FD8602,#e0760a)"
+                        : "linear-gradient(180deg,#FFCB2E,#FFBF00)",
+                    }}
+                    title={`${p.value} check-in${p.value === 1 ? "" : "s"}`}
+                  />
+                </div>
               </div>
             );
           })}
