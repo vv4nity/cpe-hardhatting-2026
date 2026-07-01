@@ -47,6 +47,7 @@ export function ScannerScreen() {
   const scanResult = useApp((s) => s.scanResult);
   const applyScanResult = useApp((s) => s.applyScanResult);
   const markPresentLocal = useApp((s) => s.markPresentLocal);
+  const scanNext = useApp((s) => s.scanNext);
   const online = useApp((s) => s.online);
   const setOnline = useApp((s) => s.setOnline);
   const pending = useApp((s) => s.pendingCount);
@@ -62,6 +63,8 @@ export function ScannerScreen() {
   const busyRef = useRef(false);
   const soundRef = useRef(soundOn);
   const syncingRef = useRef(false);
+  const wasScanningRef = useRef(false);
+  const scanReadyRef = useRef(true);
   // keep the refs (read inside camera callbacks) in sync after each render
   useEffect(() => {
     dataRef.current = data;
@@ -96,6 +99,15 @@ export function ScannerScreen() {
   useEffect(() => {
     syncRef.current = syncQueue;
   });
+
+  useEffect(() => {
+    if (scanResult && scanning) {
+      void pauseCameraForResult();
+    } else if (!scanResult && !scanning && wasScanningRef.current) {
+      void resumeCameraAfterResult();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanResult]);
 
   function beep(ok: boolean) {
     if (!soundRef.current) return;
@@ -178,7 +190,7 @@ export function ScannerScreen() {
   }
 
   async function handleScan(raw: string) {
-    if (resultRef.current || busyRef.current) return;
+    if (resultRef.current || busyRef.current || !scanReadyRef.current) return;
     const seat = seatFromScan(raw);
     const att = seat
       ? dataRef.current.attendees.find(
@@ -254,6 +266,7 @@ export function ScannerScreen() {
       if (!document.getElementById(CAMERA_ID)) return;
       const instance = new Html5Qrcode(CAMERA_ID);
       html5Ref.current = instance;
+      scanReadyRef.current = false;
       await instance.start(
         { facingMode: "environment" },
         { fps: 10 },
@@ -261,6 +274,9 @@ export function ScannerScreen() {
         () => {},
       );
       setScanning(true);
+      setTimeout(() => {
+        scanReadyRef.current = true;
+      }, 450);
     } catch {
       html5Ref.current = null;
       showToast("Camera unavailable — use manual entry", "warn");
@@ -280,6 +296,26 @@ export function ScannerScreen() {
     }
     setScanning(false);
   }
+
+  async function pauseCameraForResult() {
+    if (!scanning) return;
+    wasScanningRef.current = true;
+    await stopCamera();
+  }
+
+  async function resumeCameraAfterResult() {
+    if (wasScanningRef.current) {
+      wasScanningRef.current = false;
+      await startCamera();
+    }
+  }
+
+  useEffect(() => {
+    if (!scanResult && !scanning && wasScanningRef.current) {
+      void resumeCameraAfterResult();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scanResult]);
 
   useEffect(() => {
     return () => {
