@@ -429,7 +429,7 @@ function CheckinChart({
                 key={p.interval}
                 className="group flex h-full flex-1 flex-col items-center justify-end"
               >
-                <div className="relative w-full max-w-[44px]">
+                <div className="relative w-full max-w-[44px] h-full">
                   <span className="pointer-events-none absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-amber-50 px-2 py-1 text-[10px] font-semibold text-brand-ink shadow-sm opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                     {p.value}
                   </span>
